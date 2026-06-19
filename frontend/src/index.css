@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+body {
+  margin: 0;
+  font-family: 'Google Sans', 'Product Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  background: #121317;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
