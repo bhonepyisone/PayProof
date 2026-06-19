@@ -67,7 +67,7 @@ async def ocr_endpoint(file: UploadFile = File(...)):
 
     # 3. Run OCR pipeline
     try:
-        fields, confidence, review_status = scan_image(str(saved_path))
+        result = scan_image(str(saved_path))
     except Exception as exc:
         logger.exception("OCR pipeline failed")
         raise HTTPException(
@@ -75,7 +75,17 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             detail=f"OCR processing error: {exc}",
         )
 
-    # 4. Build response
+    # 4. Compute review status from confidence
+    fields = result["fields"]
+    confidence = result["confidence"]
+    if confidence >= 95:
+        review_status = "auto-accepted"
+    elif confidence >= 70:
+        review_status = "manual-review"
+    else:
+        review_status = "rejected"
+
+    # 5. Build response
     return {
         "success": True,
         "data": {
@@ -85,6 +95,7 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             "date": fields.get("date"),
             "confidence": round(confidence, 1),
             "review_status": review_status,
+            "raw_text": result.get("raw_text"),
             "template": "kbz_pay",
         },
     }

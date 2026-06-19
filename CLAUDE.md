@@ -14,6 +14,21 @@
 
 ---
 
+## Setup
+
+After cloning the repo, configure git to use the project's pre-commit hooks:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This runs `.githooks/pre-commit` on every commit, which checks for:
+- Staged `.env` files (blocked — secrets must never be committed)
+- Python syntax errors in staged `.py` files (blocked — don't commit broken code)
+- Reminder to update `ch-3/bhonepyisone/report.md`
+
+---
+
 ## Project Structure
 
 ```
@@ -21,6 +36,8 @@ payproof/
 ├── SPEC.md                  # SDD 6-part spec (read this first)
 ├── CLAUDE.md                # This file
 ├── .mcp.json                # MCP tools configuration
+├── .githooks/
+│   └── pre-commit           # Pre-commit hook (secret check + syntax)
 ├── .gitignore
 ├── .env.example
 ├── .claude/
