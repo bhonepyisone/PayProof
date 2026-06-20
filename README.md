@@ -84,6 +84,10 @@ payproof/
 |:-----------:|:----------------:|:------------------:|
 | ![OCR Scanner](docs/screenshot-scanner.png) | ![Expenses](docs/screenshot-expenses.png) | ![Sidebar](docs/screenshot-sidebar.png) |
 
+| Dynamic Categories | OCR → Expenses | Gamification |
+|:------------------:|:--------------:|:------------:|
+| ![Categories](docs/screenshot-categories.png) | ![OCR to Expenses](docs/screenshot-ocr-expense.png) | ![Gamification](docs/screenshot-gamification.png) |
+
 ---
 
 ## License
