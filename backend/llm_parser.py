@@ -58,7 +58,7 @@ async def parse_with_proxy(raw_text: str) -> ParsedReceipt:
         return ParsedReceipt(confidence=0.0)
 
     base_url = os.getenv("LLM_BASE_URL", "https://proxy.vibecode.tours")
-    model = os.getenv("LLM_MODEL", "claude-sonnet-4")
+    model = os.getenv("LLM_MODEL", "gpt-4o-mini")
 
     client = AsyncOpenAI(api_key=api_key, base_url=base_url)
 
