@@ -15,8 +15,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from llm_parser import parse_with_proxy
-from ocr_engine import scan_image
+from backend.llm_parser import parse_with_proxy
+from backend.ocr_engine import scan_image
 
 # ── Config ────────────────────────────────────────────────────────────────
 load_dotenv()

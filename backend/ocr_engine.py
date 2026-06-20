@@ -10,7 +10,7 @@ from pathlib import Path
 import cv2
 import easyocr
 
-from templates import match_template
+from backend.templates import match_template
 
 logger = logging.getLogger(__name__)
 
