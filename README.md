@@ -8,9 +8,12 @@ A privacy-first tool that reads payment screenshots from ANY Myanmar payment app
 
 ## Features
 
-- 🔍 **OCR Scanner** — Upload payment screenshots, extract details automatically
+- 🔍 **OCR Scanner** — Upload payment screenshots, extract amount, ref no, sender, date
 - 🧠 **Multi-Format Parsing** — LLM-powered extraction for any payment app
-- 📋 **Expenses Tracker** — Log expenses, attach receipts (upload or camera)
+- 🔗 **OCR → Expenses Pipeline** — one click sends scanned data (amount, description, receipt) into the expense form, pre-filled and ready to save
+- 📋 **Expenses Tracker** — Log expenses, attach receipts (upload or camera), sort by date or amount
+- 🏷️ **Dynamic Categories** — add, rename, delete categories (defaults: Personal / Business / Other); filter pills + per-category stats
+- 🎮 **Gamification** — scan streaks, daily goals, receipt Pokédex (collect payment apps)
 - 🎨 **Dark Theme** — Google AI Studio-inspired Material 3 design
 - 📱 **Responsive** — Mobile, tablet, desktop
 - 🔒 **Privacy-first** — OCR on-device, LLM proxy for structured extraction
@@ -63,8 +66,12 @@ payproof/
 ├── CLAUDE.md                # Project memory for Claude Code
 ├── .mcp.json                # MCP tools config
 ├── .claude/                 # Skills + Agents
-├── backend/                 # FastAPI + EasyOCR
+├── backend/                 # FastAPI + EasyOCR + LLM Parser
 ├── frontend/                # React + Vite app
+│   └── src/
+│       ├── pages/           # OcrScanner, Expenses
+│       ├── components/      # DropZone, ResultCard, etc.
+│       └── hooks/           # useGameState (gamification)
 ├── docs/                    # Screenshots
 └── slides.md                # Marp 6×20 presentation
 ```
