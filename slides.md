@@ -43,11 +43,12 @@ Bhonepyisone · June 2026
    - 🔢 Reference No.
    - 👤 Sender
    - 📅 Date
-3. **Confidence score** with three tiers:
+3. **Multi-format support** — KBZ Pay, Wave, AYA, bank screenshots
+4. **Confidence score** with three tiers:
    - ✅ ≥95% → Auto-accepted
    - ⚠ 70–94% → Manual review
    - ❌ <70% → Rejected
-4. **Expenses tracking** with receipt attachment
+5. **Expenses tracking** with receipt attachment
 
 ---
 
@@ -57,12 +58,17 @@ Bhonepyisone · June 2026
 | Layer | Technology |
 |---|---|
 | **Frontend** | React 19 · TypeScript · Vite · Tailwind CSS 4 |
-| **Backend** | Python FastAPI · PaddleOCR · OpenCV |
+| **Backend** | Python FastAPI · EasyOCR · OpenCV |
+| **LLM Parser** | LiteLLM proxy → structured JSON extraction |
 | **Database** | SQLite · SQLAlchemy |
-| **Privacy** | 🛡️ All on-device — zero cloud dependency |
+
+### Pipeline Flow
+```
+Receipt → EasyOCR → raw text → LLM Parser → structured JSON
+```
 
 - **One API endpoint:** `POST /api/v1/ocr`
-- **One template:** KBZ Pay (MVP scope)
+- **Multi-format:** KBZ Pay, Wave Money, AYA Pay, bank screenshots
 - **One database file:** `payproof.db`
 
 ---
@@ -78,18 +84,19 @@ Bhonepyisone · June 2026
 - 📱 **React Router** — navigation between OCR Scanner and Expenses
 - 📋 **Expenses CRUD** — add form, list view, localStorage persistence
 - 📸 **Receipt attachment** — file upload + camera capture
-- 📝 **11+ small commits** — each telling part of the build story
+- 🧠 **LLM Parser** — multi-format receipt extraction via LiteLLM proxy
+- 📝 **15+ small commits** — each telling part of the build story
 
 ---
 
 <!-- slide 6 -->
 # Next Steps & Links 🚀
 
-### Post-MVP roadmap
-- 📱 More payment templates: AYA Pay · Wave Pay · CB Pay
-- 📸 Camera capture mode
+### What's next
 - 🔔 Webhook integration for ERP auto-link
 - 📊 Batch processing for high-volume shops
+- 📱 Mobile app with camera capture
+- 🔐 User auth + multi-tenant support
 
 ### Links
 - 🔗 **GitHub:** `github.com/bhonepyisone/PayProof`
