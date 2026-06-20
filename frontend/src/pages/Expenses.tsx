@@ -143,15 +143,44 @@ function ReceiptPopover({
   onClose,
   onSelectFile,
   onSelectCamera,
+  anchorRef,
 }: {
   open: boolean
   onClose: () => void
   onSelectFile: (file: File) => void
   onSelectCamera: (file: File) => void
+  anchorRef: React.RefObject<HTMLDivElement>
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+
+  // Calculate position from anchor
+  useEffect(() => {
+    if (!open || !anchorRef.current) return
+    const rect = anchorRef.current.getBoundingClientRect()
+    const popoverWidth = 224 // w-56
+    let left = rect.right - popoverWidth
+    let top = rect.bottom + 4
+
+    // Clamp to viewport
+    if (left < 8) left = 8
+    if (left + popoverWidth > window.innerWidth - 8) left = window.innerWidth - popoverWidth - 8
+    if (top + 120 > window.innerHeight) top = rect.top - 120 - 4
+
+    setPosition({ top, left })
+  }, [open, anchorRef])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
 
   // Close on outside click
   useEffect(() => {
@@ -165,12 +194,40 @@ function ReceiptPopover({
     return () => document.removeEventListener('mousedown', handler)
   }, [open, onClose])
 
+  // Focus first interactive element when opened
+  useEffect(() => {
+    if (!open) return
+    const timer = setTimeout(() => {
+      cameraRef.current?.focus()
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [open])
+
+  // Trap Tab key inside popover
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key !== 'Tab') return
+    const focusable = popoverRef.current?.querySelectorAll('button, input')
+    if (!focusable?.length) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      ;(last as HTMLElement).focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      ;(first as HTMLElement).focus()
+    }
+  }
+
   if (!open) return null
 
   return (
     <div
       ref={popoverRef}
-      className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-[#3a3b40] bg-[#1a1b1f] shadow-lg shadow-black/40"
+      onKeyDown={handleKeyDown}
+      className="fixed z-50 w-56 rounded-lg border border-[#3a3b40] bg-[#1a1b1f] shadow-lg shadow-black/40"
+      style={{ top: position.top, left: position.left }}
     >
       <div className="px-1 py-1">
         <button
@@ -217,6 +274,51 @@ function ReceiptPopover({
             e.target.value = ''
           }}
         />
+      </div>
+    </div>
+  )
+}
+
+// ── Swipeable card for mobile delete ───────────────────────────────────────
+function SwipeableCard({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
+  const [offset, setOffset] = useState(0)
+  const startX = useRef(0)
+  const swiping = useRef(false)
+
+  function handleTouchStart(e: React.TouchEvent) {
+    startX.current = e.touches[0].clientX
+    swiping.current = true
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!swiping.current) return
+    const diff = e.touches[0].clientX - startX.current
+    if (diff < 0) setOffset(Math.max(diff, -80))
+  }
+
+  function handleTouchEnd() {
+    swiping.current = false
+    if (offset < -60) {
+      onDelete()
+    }
+    setOffset(0)
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-lg">
+      {/* Red delete background */}
+      <div className="absolute inset-0 flex items-center justify-end rounded-lg bg-[#f28b82]/[0.15] pr-4">
+        <span className="text-[12px] font-medium text-[#f28b82]">Delete</span>
+      </div>
+      {/* Foreground card */}
+      <div
+        className="relative transition-transform"
+        style={{ transform: `translateX(${offset}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
       </div>
     </div>
   )
@@ -476,6 +578,34 @@ export default function Expenses() {
   const [filterCat, setFilterCat] = useState<string | null>(null)
   const [ocrBanner, setOcrBanner] = useState(false)
 
+  // Undo toast state
+  const [pendingDelete, setPendingDelete] = useState<{ ids: string[]; expenses: Expense[] } | null>(null)
+  const [showUndo, setShowUndo] = useState(false)
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Custom category dropdown
+  const [catDropdownOpen, setCatDropdownOpen] = useState(false)
+  const catDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Popover anchor refs (one per expense row)
+  const popoverAnchors = useRef<Map<string, HTMLDivElement>>(new Map())
+  function setPopoverAnchor(id: string, el: HTMLDivElement | null) {
+    if (el) popoverAnchors.current.set(id, el)
+    else popoverAnchors.current.delete(id)
+  }
+
+  // Close category dropdown on outside click
+  useEffect(() => {
+    if (!catDropdownOpen) return
+    function handler(e: MouseEvent) {
+      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target as Node)) {
+        setCatDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [catDropdownOpen])
+
   // Form state
   const [formDate, setFormDate] = useState(() => todayStr())
   const [formDesc, setFormDesc] = useState('')
@@ -610,17 +740,44 @@ export default function Expenses() {
     )
   }, [])
 
-  // ── Delete expense ─────────────────────────────────────────────────────
+  // ── Delete expense (with undo) ─────────────────────────────────────────
   const deleteExpense = useCallback((id: string) => {
+    const expense = expenses.find((e) => e.id === id)
+    if (!expense) return
+    // Clear any pending undo
+    if (undoTimer.current) clearTimeout(undoTimer.current)
     setExpenses((prev) => prev.filter((e) => e.id !== id))
-  }, [])
+    setPendingDelete({ ids: [id], expenses: [expense] })
+    setShowUndo(true)
+    undoTimer.current = setTimeout(() => {
+      setPendingDelete(null)
+      setShowUndo(false)
+    }, 5000)
+  }, [expenses])
 
-  // ── Clear all ──────────────────────────────────────────────────────────
+  // ── Undo handler ─────────────────────────────────────────────────────
+  const undoDelete = useCallback(() => {
+    if (!pendingDelete) return
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+    setExpenses((prev) => [...prev, ...pendingDelete.expenses])
+    setPendingDelete(null)
+    setShowUndo(false)
+  }, [pendingDelete])
+
+  // ── Clear all (with undo) ────────────────────────────────────────────
   const clearAll = useCallback(() => {
-    if (confirm('Delete all expenses? This cannot be undone.')) {
-      setExpenses([])
-    }
-  }, [])
+    if (expenses.length === 0) return
+    // Clear any pending undo
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+    const allExpenses = [...expenses]
+    setExpenses([])
+    setPendingDelete({ ids: allExpenses.map((e) => e.id), expenses: allExpenses })
+    setShowUndo(true)
+    undoTimer.current = setTimeout(() => {
+      setPendingDelete(null)
+      setShowUndo(false)
+    }, 5000)
+  }, [expenses])
 
   // ── Sort ───────────────────────────────────────────────────────────────
   const toggleSort = useCallback((key: 'date' | 'amount') => {
@@ -782,7 +939,7 @@ export default function Expenses() {
 
       {/* Add expense form */}
       {formOpen && (
-        <div className="mb-6 rounded-lg border border-[#3a3b40] bg-[#1a1b1f] p-4 sm:p-5">
+        <div className="mb-6 rounded-lg border border-[#3a3b40] bg-[#1a1b1f] p-4 sm:p-5 animate-[slideDown_0.2s_ease-out]">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Date */}
             <div>
@@ -863,18 +1020,36 @@ export default function Expenses() {
                 Category
               </label>
               <div className="flex gap-2">
-                <select
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                  className="flex-1 rounded-md border border-[#3a3b40] bg-[#2a2b30] px-3 py-2 text-[13px] text-[#ffffff] outline-none focus:border-[#2e96ff] transition-colors"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative flex-1" ref={catDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setCatDropdownOpen((v) => !v)}
+                    className="flex w-full items-center justify-between rounded-md border border-[#3a3b40] bg-[#2a2b30] px-3 py-2 text-[13px] text-[#ffffff] outline-none focus:border-[#2e96ff] transition-colors"
+                  >
+                    {formCategory}
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-[#8e959f]">
+                      <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {catDropdownOpen && (
+                    <div className="absolute bottom-full mb-1 left-0 z-20 w-full rounded-lg border border-[#3a3b40] bg-[#1a1b1f] shadow-lg shadow-black/40 py-1">
+                      {categories.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => { setFormCategory(c); setCatDropdownOpen(false) }}
+                          className={`w-full px-3 py-2 text-left text-[13px] transition-colors ${
+                            formCategory === c
+                              ? 'bg-[#2e96ff]/[0.1] text-[#2e96ff]'
+                              : 'text-[#b2bbc5] hover:bg-[#2a2b30] hover:text-[#ffffff]'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => setCatModalOpen(true)}
                   className="shrink-0 rounded-md border border-[#3a3b40] bg-[#2a2b30] px-2.5 py-2 text-[#8e959f] hover:text-[#2e96ff] hover:border-[#2e96ff] transition-colors"
@@ -970,7 +1145,7 @@ export default function Expenses() {
 
                   {/* Receipt column */}
                   <span className="w-[140px] flex justify-end">
-                    <div className="relative">
+                    <div className="relative" ref={(el) => setPopoverAnchor(expense.id, el)}>
                       {/* Receipt attached — show thumbnail + actions */}
                       {expense.receiptFile ? (
                         <div className="flex items-center gap-1.5">
@@ -1015,6 +1190,7 @@ export default function Expenses() {
                         onClose={() => setPopoverFor(null)}
                         onSelectFile={(f) => attachReceipt(expense.id, f)}
                         onSelectCamera={(f) => attachReceipt(expense.id, f)}
+                        anchorRef={{ current: popoverAnchors.current.get(expense.id) ?? null }}
                       />
                     </div>
                   </span>
@@ -1039,8 +1215,8 @@ export default function Expenses() {
           {/* Mobile card list */}
           <div className="sm:hidden space-y-3">
             {sorted.map((expense) => (
+              <SwipeableCard key={expense.id} onDelete={() => deleteExpense(expense.id)}>
               <div
-                key={expense.id}
                 className="rounded-lg border border-[#3a3b40] bg-[#1a1b1f] p-4"
               >
                 <div className="flex items-start justify-between mb-2">
@@ -1078,7 +1254,7 @@ export default function Expenses() {
                     </span>
                   </div>
 
-                  <div className="relative">
+                  <div className="relative" ref={(el) => setPopoverAnchor(expense.id, el)}>
                     {expense.receiptFile ? (
                       <div className="flex items-center gap-2">
                         <ReceiptThumbnail
@@ -1110,13 +1286,30 @@ export default function Expenses() {
                       onClose={() => setPopoverFor(null)}
                       onSelectFile={(f) => attachReceipt(expense.id, f)}
                       onSelectCamera={(f) => attachReceipt(expense.id, f)}
+                      anchorRef={{ current: popoverAnchors.current.get(expense.id) ?? null }}
                     />
                   </div>
                 </div>
               </div>
+              </SwipeableCard>
             ))}
           </div>
         </>
+      )}
+
+      {/* Undo toast */}
+      {showUndo && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-[#3a3b40] bg-[#1a1b1f] px-4 py-3 shadow-lg shadow-black/40">
+          <span className="text-[13px] text-[#b2bbc5]">
+            {pendingDelete?.ids.length === 1 ? 'Expense deleted' : `${pendingDelete?.ids.length} expenses deleted`}
+          </span>
+          <button
+            onClick={undoDelete}
+            className="rounded-md bg-[#2e96ff] px-3 py-1 text-[12px] font-medium text-white hover:bg-[#2e96ff]/90 transition-colors"
+          >
+            Undo
+          </button>
+        </div>
       )}
 
       {/* Category manager modal */}

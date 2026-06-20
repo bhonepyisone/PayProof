@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
+import BottomNav from './components/BottomNav'
 import OcrScanner from './pages/OcrScanner'
 import Expenses from './pages/Expenses'
 import Achievements from './pages/Achievements'
@@ -50,30 +51,24 @@ function AppLayout() {
 
       {/* Main content area */}
       <div className="flex min-h-screen flex-1 flex-col">
-        {/* Mobile top bar — shows toggle when sidebar is hidden */}
+        {/* Mobile top bar */}
         {isMobile && (
           <div className="sticky top-0 z-30 flex h-14 items-center border-b border-[#3a3b40] bg-[#1a1b1f] px-4">
-            <button
-              onClick={() => setSidebarExpanded(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-md text-[#b2bbc5] hover:bg-[#2a2b30] hover:text-[#ffffff] transition-colors"
-              aria-label="Open navigation"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-            <span className="ml-3 text-[15px] font-medium text-[#ffffff]">PayProof</span>
+            <span className="text-[15px] font-medium text-[#ffffff]">PayProof</span>
           </div>
         )}
 
         {/* Page content */}
-        <main className="mx-auto w-full max-w-full flex-1 px-4 py-8 sm:max-w-lg sm:px-6 sm:py-10 md:max-w-xl lg:max-w-2xl">
+        <main className="mx-auto w-full max-w-full flex-1 px-4 py-8 sm:max-w-lg sm:px-6 sm:py-10 md:max-w-xl lg:max-w-2xl pb-20 sm:pb-8">
           <Routes>
             <Route path="/" element={<OcrScanner />} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/achievements" element={<Achievements />} />
           </Routes>
         </main>
+
+        {/* Mobile bottom tab bar */}
+        {isMobile && <BottomNav />}
       </div>
     </div>
   )

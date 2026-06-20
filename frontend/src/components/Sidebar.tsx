@@ -106,27 +106,9 @@ export default function Sidebar({ expanded, onToggle, isMobile }: SidebarProps) 
     </div>
   )
 
-  // Mobile: overlay drawer
+  // Mobile: bottom nav handles navigation — don't render sidebar
   if (isMobile) {
-    return (
-      <>
-        {/* Backdrop */}
-        {expanded && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
-            onClick={onToggle}
-          />
-        )}
-        {/* Drawer */}
-        <div
-          className={`fixed left-0 top-0 z-50 h-full transition-transform duration-300 ease-in-out ${
-            expanded ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          {sidebarContent}
-        </div>
-      </>
-    )
+    return null
   }
 
   // Desktop: fixed sidebar
