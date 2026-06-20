@@ -47,6 +47,7 @@ Bhonepyisone · June 2026
    - ✅ ≥95% → Auto-accepted
    - ⚠ 70–94% → Manual review
    - ❌ <70% → Rejected
+4. **Expenses tracking** with receipt attachment
 
 ---
 
@@ -74,6 +75,9 @@ Bhonepyisone · June 2026
 - 📦 **Skill** — `SKILL.md` for OCR environment setup
 - 🤖 **Agent** — `payproof-dev.md` persona with scope guardrails
 - 🪝 **Pre-commit hook** — secret detection + Python syntax check
+- 📱 **React Router** — navigation between OCR Scanner and Expenses
+- 📋 **Expenses CRUD** — add form, list view, localStorage persistence
+- 📸 **Receipt attachment** — file upload + camera capture
 - 📝 **11+ small commits** — each telling part of the build story
 
 ---
