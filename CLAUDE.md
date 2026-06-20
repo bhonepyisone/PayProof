@@ -95,6 +95,15 @@ payproof/
 - Read `SPEC.md` first before making any change
 - Keep the single-provider constraint: KBZ Pay only for MVP
 
+### Responsive Design
+- Mobile-first responsive design using Tailwind breakpoints (sm:, md:, lg:)
+- Touch targets minimum 44×44px on mobile
+- Body text minimum 16px on mobile to prevent iOS zoom
+- Use responsive prefixes for padding, margins, font sizes, and layout
+- Test on 320px width minimum
+- The upload drop zone must work on touch devices
+- Cards and containers should use `max-w-*` utilities to constrain width on large screens
+
 ---
 
 ## Rules for AI
