@@ -48,8 +48,10 @@ Bhonepyisone · June 2026
    - ✅ ≥95% → Auto-accepted
    - ⚠ 70–94% → Manual review
    - ❌ <70% → Rejected
-5. **Expenses tracking** with receipt attachment
-6. **Gamification** — streaks, daily goals, receipt Pokédex
+5. **OCR → Expenses pipeline** — one click sends scanned data to expense form
+6. **Dynamic categories** — add, rename, delete; defaults: Personal / Business / Other
+7. **Expenses tracking** with receipt attachment + category filter pills
+8. **Gamification** — streaks, daily goals, receipt Pokédex
 
 ---
 
@@ -85,6 +87,8 @@ Receipt → EasyOCR → raw text → LLM Parser → structured JSON
 - 📱 **React Router** — navigation between OCR Scanner and Expenses
 - 📋 **Expenses CRUD** — add form, list view, localStorage persistence
 - 📸 **Receipt attachment** — file upload + camera capture
+- 🔗 **OCR → Expenses** — scan flows into expense form with receipt + fields pre-filled
+- 🏷️ **Dynamic categories** — localStorage-backed add/rename/delete with fallback
 - 🧠 **LLM Parser** — multi-format receipt extraction via LiteLLM proxy
 - 🎮 **Gamification** — streaks, daily goals, receipt Pokédex
 - 📝 **15+ small commits** — each telling part of the build story

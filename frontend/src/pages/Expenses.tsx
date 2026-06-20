@@ -26,9 +26,33 @@ interface Expense {
   createdAt: string
 }
 
-const CATEGORIES = ['Food', 'Transport', 'Utilities', 'Shopping', 'Healthcare', 'Other']
-
+const DEFAULT_CATEGORIES = ['Personal', 'Business', 'Other']
+const CATEGORIES_KEY = 'payproof_categories'
 const STORAGE_KEY = 'payproof-expenses'
+
+// ── Category persistence ──────────────────────────────────────────────────
+function loadCategories(): string[] {
+  try {
+    const raw = localStorage.getItem(CATEGORIES_KEY)
+    if (!raw) {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES))
+      return [...DEFAULT_CATEGORIES]
+    }
+    const data = JSON.parse(raw)
+    if (!Array.isArray(data) || data.length === 0) {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES))
+      return [...DEFAULT_CATEGORIES]
+    }
+    return data as string[]
+  } catch {
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES))
+    return [...DEFAULT_CATEGORIES]
+  }
+}
+
+function persistCategories(categories: string[]) {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories))
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function cn(...classes: (string | false | undefined | null)[]) {
@@ -198,23 +222,312 @@ function ReceiptPopover({
   )
 }
 
+// ── Category Manager Modal ─────────────────────────────────────────────────
+function CategoryManagerModal({
+  open,
+  categories,
+  onClose,
+  onSave,
+  expenseCategoryCounts,
+}: {
+  open: boolean
+  categories: string[]
+  onClose: () => void
+  onSave: (cats: string[]) => void
+  expenseCategoryCounts: Record<string, number>
+}) {
+  const [localCats, setLocalCats] = useState<string[]>(categories)
+  const [editingIdx, setEditingIdx] = useState<number | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [newCat, setNewCat] = useState('')
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null)
+  const editRef = useRef<HTMLInputElement>(null)
+
+  // Sync when opened
+  useEffect(() => {
+    if (open) {
+      setLocalCats(categories)
+      setEditingIdx(null)
+      setEditValue('')
+      setNewCat('')
+      setDeleteIdx(null)
+    }
+  }, [open, categories])
+
+  // Focus edit input
+  useEffect(() => {
+    if (editingIdx !== null && editRef.current) {
+      editRef.current.focus()
+      editRef.current.select()
+    }
+  }, [editingIdx])
+
+  if (!open) return null
+
+  function startEdit(idx: number) {
+    setEditingIdx(idx)
+    setEditValue(localCats[idx])
+    setDeleteIdx(null)
+  }
+
+  function commitEdit() {
+    if (editingIdx === null) return
+    const trimmed = editValue.trim()
+    if (!trimmed) { cancelEdit(); return }
+    if (trimmed !== localCats[editingIdx] && localCats.includes(trimmed)) { cancelEdit(); return }
+    const updated = [...localCats]
+    updated[editingIdx] = trimmed
+    setLocalCats(updated)
+    setEditingIdx(null)
+  }
+
+  function cancelEdit() {
+    setEditingIdx(null)
+    setEditValue('')
+  }
+
+  function requestDelete(idx: number) {
+    if (localCats[idx] === 'Other') return // can't delete Other
+    setDeleteIdx(idx)
+    setEditingIdx(null)
+  }
+
+  function confirmDelete() {
+    if (deleteIdx === null) return
+    setLocalCats((prev) => prev.filter((_, i) => i !== deleteIdx))
+    setDeleteIdx(null)
+  }
+
+  function addCategory() {
+    const trimmed = newCat.trim()
+    if (!trimmed || localCats.includes(trimmed) || localCats.length >= 20) return
+    setLocalCats((prev) => [...prev, trimmed])
+    setNewCat('')
+  }
+
+  function handleSave() {
+    // Ensure "Other" always exists
+    const final = localCats.includes('Other') ? localCats : [...localCats, 'Other']
+    onSave(final)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {/* Modal */}
+      <div className="relative w-full max-w-md rounded-xl border border-[#3a3b40] bg-[#1a1b1f] shadow-2xl shadow-black/50">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#3a3b40] px-5 py-4">
+          <h3 className="text-[15px] font-semibold text-[#ffffff]">Manage Categories</h3>
+          <button onClick={onClose} className="text-[#8e959f] hover:text-[#ffffff] transition-colors">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Category list */}
+        <div className="max-h-[320px] overflow-y-auto px-5 py-3 space-y-1">
+          {localCats.map((cat, idx) => (
+            <div key={idx}>
+              <div className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-[#2a2b30] group transition-colors">
+                {editingIdx === idx ? (
+                  <input
+                    ref={editRef}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitEdit()
+                      if (e.key === 'Escape') cancelEdit()
+                    }}
+                    className="flex-1 rounded border border-[#2e96ff] bg-[#2a2b30] px-2 py-1 text-[13px] text-[#ffffff] outline-none"
+                  />
+                ) : (
+                  <button
+                    onClick={() => startEdit(idx)}
+                    className="flex-1 text-left text-[13px] text-[#b2bbc5] hover:text-[#ffffff] transition-colors"
+                  >
+                    {cat}
+                  </button>
+                )}
+                <span className="text-[11px] text-[#8e959f] tabular-nums min-w-[20px] text-right">
+                  {expenseCategoryCounts[cat] ?? 0}
+                </span>
+                {cat !== 'Other' && (
+                  <button
+                    onClick={() => requestDelete(idx)}
+                    className="shrink-0 opacity-0 group-hover:opacity-100 text-[#8e959f] hover:text-[#f28b82] transition-all"
+                    aria-label={`Delete ${cat}`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 4h10M5 4V2h4v2M4 4v8h6V4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {/* Delete confirmation */}
+              {deleteIdx === idx && (
+                <div className="ml-2 mb-1 rounded-md border border-[#f28b82]/30 bg-[#f28b82]/[0.06] px-3 py-2">
+                  <p className="text-[12px] text-[#f28b82]">
+                    Delete &apos;{cat}&apos;? Expenses using it will fall back to &apos;Other&apos;.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={confirmDelete}
+                      className="rounded-md bg-[#f28b82]/20 px-3 py-1 text-[11px] font-medium text-[#f28b82] hover:bg-[#f28b82]/30 transition-colors"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => setDeleteIdx(null)}
+                      className="rounded-md px-3 py-1 text-[11px] text-[#8e959f] hover:text-[#ffffff] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add category */}
+        <div className="border-t border-[#3a3b40] px-5 py-3">
+          <div className="flex gap-2">
+            <input
+              value={newCat}
+              onChange={(e) => setNewCat(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addCategory() }}
+              placeholder={localCats.length >= 20 ? 'Max 20 categories' : 'New category name'}
+              disabled={localCats.length >= 20}
+              className="flex-1 rounded-md border border-[#3a3b40] bg-[#2a2b30] px-3 py-2 text-[13px] text-[#ffffff] placeholder:text-[#8e959f] outline-none focus:border-[#2e96ff] disabled:opacity-50 transition-colors"
+            />
+            <button
+              onClick={addCategory}
+              disabled={!newCat.trim() || localCats.includes(newCat.trim()) || localCats.length >= 20}
+              className="rounded-md bg-[#2e96ff] px-3 py-2 text-[12px] font-medium text-white hover:bg-[#2e96ff]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          {newCat.trim() && localCats.includes(newCat.trim()) && (
+            <p className="mt-1 text-[11px] text-[#f28b82]">Category already exists</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 border-t border-[#3a3b40] px-5 py-3">
+          <button
+            onClick={onClose}
+            className="rounded-md px-4 py-2 text-[12px] text-[#8e959f] hover:text-[#ffffff] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="rounded-md bg-[#2e96ff] px-4 py-2 text-[12px] font-medium text-white hover:bg-[#2e96ff]/90 transition-colors"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Pending expense from OCR ───────────────────────────────────────────────
+interface PendingExpense {
+  amount: number | null
+  description: string
+  date: string
+  receiptFile: string | null
+  receiptFileName: string | null
+  rawOcrText: string | null
+  detectedApp: string | null
+}
+
+const PENDING_KEY = 'payproof_pending_expense'
+
+function loadPendingExpense(): PendingExpense | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY)
+    if (!raw) return null
+    localStorage.removeItem(PENDING_KEY)
+    return JSON.parse(raw) as PendingExpense
+  } catch {
+    localStorage.removeItem(PENDING_KEY)
+    return null
+  }
+}
+
 // ── Expenses Page ──────────────────────────────────────────────────────────
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>(() => loadExpenses())
+  const [categories, setCategories] = useState<string[]>(() => loadCategories())
   const [formOpen, setFormOpen] = useState(false)
   const [popoverFor, setPopoverFor] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<'date' | 'amount'>('date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [ocrSending, setOcrSending] = useState<string | null>(null)
+  const [catModalOpen, setCatModalOpen] = useState(false)
+  const [filterCat, setFilterCat] = useState<string | null>(null)
+  const [ocrBanner, setOcrBanner] = useState(false)
 
   // Form state
   const [formDate, setFormDate] = useState(() => todayStr())
   const [formDesc, setFormDesc] = useState('')
   const [formAmount, setFormAmount] = useState('')
-  const [formCategory, setFormCategory] = useState(CATEGORIES[0])
+  const [formCategory, setFormCategory] = useState(() => loadCategories()[0])
+  const [formReceipt, setFormReceipt] = useState<string | null>(null)
+  const [formReceiptName, setFormReceiptName] = useState<string | null>(null)
+  const [formOcrText, setFormOcrText] = useState<string | null>(null)
 
   // Persist on change
   useEffect(() => { saveExpenses(expenses) }, [expenses])
+
+  // ── Load pending OCR expense on mount ───────────────────────────────────
+  useEffect(() => {
+    const pending = loadPendingExpense()
+    if (!pending) return
+
+    // Pre-fill form
+    if (pending.date) setFormDate(pending.date)
+    if (pending.description) setFormDesc(pending.description)
+    if (pending.amount != null) setFormAmount(String(pending.amount))
+    if (pending.receiptFile) setFormReceipt(pending.receiptFile)
+    if (pending.receiptFileName) setFormReceiptName(pending.receiptFileName)
+    if (pending.rawOcrText) setFormOcrText(pending.rawOcrText)
+
+    setFormOpen(true)
+    setOcrBanner(true)
+  }, [])
+
+  // ── Category management ───────────────────────────────────────────────
+  const saveCategories = useCallback((newCats: string[]) => {
+    // Re-assign expenses whose category was deleted
+    setExpenses((prev) =>
+      prev.map((e) =>
+        newCats.includes(e.category) ? e : { ...e, category: 'Other' },
+      ),
+    )
+    setCategories(newCats)
+    persistCategories(newCats)
+    // Fix form category if it was removed
+    setFormCategory((prev) => (newCats.includes(prev) ? prev : newCats[0] ?? 'Other'))
+  }, [])
+
+  const expenseCategoryCounts = expenses.reduce<Record<string, number>>((acc, e) => {
+    acc[e.category] = (acc[e.category] ?? 0) + 1
+    return acc
+  }, {})
+
+  const categoryTotals = expenses.reduce<Record<string, number>>((acc, e) => {
+    acc[e.category] = (acc[e.category] ?? 0) + (e.amount || 0)
+    return acc
+  }, {})
 
   // ── Add expense ────────────────────────────────────────────────────────
   const addExpense = useCallback(() => {
@@ -228,9 +541,9 @@ export default function Expenses() {
       description: formDesc.trim(),
       amount: amountNum,
       category: formCategory,
-      receiptFile: null,
-      receiptFileName: null,
-      receiptOcrResult: null,
+      receiptFile: formReceipt,
+      receiptFileName: formReceiptName,
+      receiptOcrResult: formOcrText,
       createdAt: new Date().toISOString(),
     }
 
@@ -238,8 +551,11 @@ export default function Expenses() {
     setFormDate(todayStr())
     setFormDesc('')
     setFormAmount('')
-    setFormCategory(CATEGORIES[0])
-  }, [formDate, formDesc, formAmount, formCategory])
+    setFormCategory(categories[0])
+    setFormReceipt(null)
+    setFormReceiptName(null)
+    setFormOcrText(null)
+  }, [formDate, formDesc, formAmount, formCategory, categories, formReceipt, formReceiptName, formOcrText])
 
   // ── Attach receipt ─────────────────────────────────────────────────────
   const attachReceipt = useCallback(async (id: string, file: File) => {
@@ -318,7 +634,8 @@ export default function Expenses() {
     })
   }, [])
 
-  const sorted = [...expenses].sort((a, b) => {
+  const filtered = filterCat ? expenses.filter((e) => e.category === filterCat) : expenses
+  const sorted = [...filtered].sort((a, b) => {
     const dir = sortDir === 'asc' ? 1 : -1
     if (sortKey === 'date') return a.date.localeCompare(b.date) * dir
     return (a.amount - b.amount) * dir
@@ -365,6 +682,28 @@ export default function Expenses() {
         </div>
       </div>
 
+      {/* OCR scan notification banner */}
+      {ocrBanner && (
+        <div className="mb-5 flex items-center gap-3 rounded-lg border border-[#81c995]/30 bg-[#81c995]/[0.08] px-4 py-3">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
+            <circle cx="9" cy="9" r="8" stroke="#81c995" strokeWidth="1.5" />
+            <path d="M6 9l2 2 4-4" stroke="#81c995" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="flex-1 text-[12px] font-medium text-[#81c995] sm:text-[13px]">
+            New data from OCR scan — adjust and save
+          </p>
+          <button
+            onClick={() => setOcrBanner(false)}
+            className="shrink-0 p-1 text-[#81c995]/60 hover:text-[#81c995] transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Stats pills */}
       {totalCount > 0 && (
         <div className="mb-5 flex flex-wrap gap-2">
@@ -381,6 +720,63 @@ export default function Expenses() {
               {totalAmount.toLocaleString('en-US')} Ks
             </span>
           </div>
+        </div>
+      )}
+
+      {/* By Category stats */}
+      {totalCount > 0 && categories.length > 0 && (
+        <div className="mb-4">
+          <p className="mb-2 text-[11px] font-medium text-[#8e959f] uppercase tracking-wider">By Category</p>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => {
+              const count = expenseCategoryCounts[cat] ?? 0
+              const total = categoryTotals[cat] ?? 0
+              return (
+                <div
+                  key={cat}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#3a3b40] bg-[#1a1b1f] px-3 py-2"
+                >
+                  <span className="text-[12px] text-[#b2bbc5]">{cat}</span>
+                  <span className="text-[12px] font-semibold text-[#ffffff] tabular-nums">{count}</span>
+                  <span className="text-[11px] text-[#8e959f]">·</span>
+                  <span className="text-[12px] font-medium text-[#ffffff] tabular-nums">
+                    {total.toLocaleString('en-US')} Ks
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Category filter pills */}
+      {expenses.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setFilterCat(null)}
+            className={cn(
+              'rounded-full px-3 py-1 text-[11px] font-medium transition-colors',
+              filterCat === null
+                ? 'bg-[#2e96ff] text-white'
+                : 'border border-[#3a3b40] bg-[#1a1b1f] text-[#8e959f] hover:text-[#ffffff] hover:border-[#8e959f]',
+            )}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilterCat(filterCat === cat ? null : cat)}
+              className={cn(
+                'rounded-full px-3 py-1 text-[11px] font-medium transition-colors',
+                filterCat === cat
+                  ? 'bg-[#2e96ff] text-white'
+                  : 'border border-[#3a3b40] bg-[#1a1b1f] text-[#8e959f] hover:text-[#ffffff] hover:border-[#8e959f]',
+              )}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       )}
 
@@ -437,24 +833,60 @@ export default function Expenses() {
             </div>
           </div>
 
+          {/* Receipt preview (from OCR) */}
+          {formReceipt && (
+            <div className="mt-3 flex items-center gap-2 rounded-md bg-[#2a2b30] px-3 py-2">
+              <img
+                src={formReceipt}
+                alt="Receipt preview"
+                className="h-8 w-8 rounded object-cover"
+              />
+              <span className="flex-1 text-[11px] text-[#b2bbc5] truncate">
+                {formReceiptName ?? 'Receipt from OCR'}
+              </span>
+              <button
+                onClick={() => { setFormReceipt(null); setFormReceiptName(null); setFormOcrText(null) }}
+                className="shrink-0 text-[#8e959f] hover:text-[#f28b82] transition-colors"
+                aria-label="Remove receipt"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {/* Category + submit row */}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="w-full sm:w-48">
               <label className="mb-1.5 block text-[11px] font-medium text-[#8e959f] sm:text-[12px]">
                 Category
               </label>
-              <select
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
-                className="w-full rounded-md border border-[#3a3b40] bg-[#2a2b30] px-3 py-2 text-[13px] text-[#ffffff] outline-none focus:border-[#2e96ff] transition-colors"
-                style={{ colorScheme: 'dark' }}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                  className="flex-1 rounded-md border border-[#3a3b40] bg-[#2a2b30] px-3 py-2 text-[13px] text-[#ffffff] outline-none focus:border-[#2e96ff] transition-colors"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setCatModalOpen(true)}
+                  className="shrink-0 rounded-md border border-[#3a3b40] bg-[#2a2b30] px-2.5 py-2 text-[#8e959f] hover:text-[#2e96ff] hover:border-[#2e96ff] transition-colors"
+                  aria-label="Manage categories"
+                  title="Manage categories"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 1.5v11M1.5 7h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <button
               onClick={addExpense}
@@ -686,6 +1118,15 @@ export default function Expenses() {
           </div>
         </>
       )}
+
+      {/* Category manager modal */}
+      <CategoryManagerModal
+        open={catModalOpen}
+        categories={categories}
+        onClose={() => setCatModalOpen(false)}
+        onSave={saveCategories}
+        expenseCategoryCounts={expenseCategoryCounts}
+      />
     </div>
   )
 }

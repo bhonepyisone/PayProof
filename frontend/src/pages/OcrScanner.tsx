@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { recordScan } from '../hooks/useGameState'
 import StreakBadge from '../components/StreakBadge'
@@ -91,9 +91,11 @@ function UploadIcon({ className }: { className?: string }) {
 function UploadZone({
   onResult,
   onError,
+  onFileRef,
 }: {
   onResult: (r: OcrResult) => void
   onError: (msg: string) => void
+  onFileRef: React.MutableRefObject<File | null>
 }) {
   const [loading, setLoading] = useState(false)
 
@@ -101,6 +103,9 @@ function UploadZone({
     async (accepted: File[]) => {
       const file = accepted[0]
       if (!file) return
+
+      // Store file reference for later use (Add to Expenses)
+      onFileRef.current = file
 
       setLoading(true)
       onError('')
@@ -120,7 +125,7 @@ function UploadZone({
         setLoading(false)
       }
     },
-    [onResult, onError],
+    [onResult, onError, onFileRef],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -176,8 +181,32 @@ function UploadZone({
   )
 }
 
+// ── PendingExpense type ─────────────────────────────────────────────────────
+interface PendingExpense {
+  amount: number | null
+  description: string
+  date: string
+  receiptFile: string | null
+  receiptFileName: string | null
+  rawOcrText: string | null
+  detectedApp: string | null
+}
+
+// ── Toast notification ─────────────────────────────────────────────────────
+function Toast({ message, visible }: { message: string; visible: boolean }) {
+  if (!visible) return null
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-[slideIn_0.3s_ease-out] rounded-lg border border-[#81c995]/30 bg-[#81c995]/[0.15] px-4 py-3 shadow-lg backdrop-blur-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-[14px]">🎯</span>
+        <span className="text-[13px] font-medium text-[#81c995]">{message}</span>
+      </div>
+    </div>
+  )
+}
+
 // ── ResultCard ─────────────────────────────────────────────────────────────
-function ResultCard({ result }: { result: OcrResult }) {
+function ResultCard({ result, onAddToExpenses }: { result: OcrResult; onAddToExpenses: () => void }) {
   return (
     <div className="mt-6 overflow-hidden rounded-lg border border-[#3a3b40] bg-[#1a1b1f]">
       {/* Header */}
@@ -225,6 +254,19 @@ function ResultCard({ result }: { result: OcrResult }) {
           </pre>
         </details>
       )}
+
+      {/* Add to Expenses button */}
+      <div className="border-t border-[#3a3b40] px-4 py-3 sm:px-5 sm:py-4">
+        <button
+          onClick={onAddToExpenses}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#2e96ff] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[#2e96ff]/90 transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 4v8M4 8h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          Add to Expenses →
+        </button>
+      </div>
     </div>
   )
 }
@@ -259,6 +301,9 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
 export default function OcrScanner() {
   const [result, setResult] = useState<OcrResult | null>(null)
   const [error, setError] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const uploadedFileRef = useRef<File | null>(null)
 
   const handleResult = useCallback((r: OcrResult) => {
     setResult(null)
@@ -269,13 +314,53 @@ export default function OcrScanner() {
     })
   }, [])
 
+  // Handle "Add to Expenses" click
+  const handleAddToExpenses = useCallback(async () => {
+    if (!result) return
+
+    // Build description from sender + ref_no
+    const parts = []
+    if (result.sender) parts.push(result.sender)
+    if (result.ref_no) parts.push(result.ref_no)
+    const description = parts.length > 0 ? parts.join(' - ') : 'Scanned receipt'
+
+    // Convert uploaded file to base64 if available
+    let receiptFile: string | null = null
+    let receiptFileName: string | null = null
+    if (uploadedFileRef.current) {
+      try {
+        receiptFile = await readFileAsDataURL(uploadedFileRef.current)
+        receiptFileName = uploadedFileRef.current.name
+      } catch {
+        // Silently fail — receipt is optional
+      }
+    }
+
+    const pending: PendingExpense = {
+      amount: result.amount ? parseFloat(result.amount) : null,
+      description,
+      date: result.date || todayStr(),
+      receiptFile,
+      receiptFileName,
+      rawOcrText: result.raw_text,
+      detectedApp: result.detected_app,
+    }
+
+    localStorage.setItem('payproof_pending_expense', JSON.stringify(pending))
+
+    // Show toast
+    setToastMessage('Added to Expenses! View in Expenses tab 🎯')
+    setToastVisible(true)
+    setTimeout(() => setToastVisible(false), 3000)
+  }, [result])
+
   return (
     <>
-      <UploadZone onResult={handleResult} onError={setError} />
+      <UploadZone onResult={handleResult} onError={setError} onFileRef={uploadedFileRef} />
       <ErrorBanner message={error} onDismiss={() => setError('')} />
       {result && (
         <>
-          <ResultCard result={result} />
+          <ResultCard result={result} onAddToExpenses={handleAddToExpenses} />
           {/* Gamification bar */}
           <div className="mt-4 flex items-center justify-between gap-2">
             <StreakBadge compact />
@@ -283,6 +368,23 @@ export default function OcrScanner() {
           </div>
         </>
       )}
+      <Toast message={toastMessage} visible={toastVisible} />
     </>
   )
+}
+
+// ── Helper: read file as data URL ──────────────────────────────────────────
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
+}
+
+// ── Helper: today string ───────────────────────────────────────────────────
+function todayStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
