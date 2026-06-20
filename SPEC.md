@@ -168,3 +168,48 @@ The MVP ships when every checkbox is ticked.
 ### Presentation & Documentation
 - [ ] Marp slides (6 slides, 20s auto-advance) pitching the project
 - [ ] `report.md` at `ch-3/bhonepyisone/report.md` (team repository)
+
+---
+
+## 7. Post-MVP: Expenses Tracker
+
+### Overview
+Add a complete expense tracking module alongside the OCR payment reader. Users can:
+- View a list of expenses
+- Collapse/expand a sidebar for navigation
+- Attach receipts to each expense (upload from file or capture from camera)
+
+### New Features
+
+#### Navigation
+- Collapsible sidebar with two pages: "OCR Scanner" and "Expenses"
+- React Router for page navigation
+- Sidebar collapses to icons-only on mobile
+
+#### Expenses Page
+- Table/list view of all expenses
+- Each row: date, description, amount, category, receipt status
+- Sortable by date/amount
+- Pull-to-refresh on mobile
+
+#### Receipt Attachment
+- Each expense row has an "Attach Receipt" action
+- Two modes: Upload from gallery/file picker OR capture from camera
+- Uses the existing EasyOCR backend to auto-extract receipt data
+- Shows thumbnail preview when receipt is attached
+- Status badge: "📎 Attached" or "— None"
+
+### Anti-Goals (for this feature)
+- No receipt OCR auto-fill in first version (manual attachment only)
+- No PDF support for receipts
+- No cloud sync
+- No expense categories management (use free-text for now)
+
+### Definition of Done (Expenses)
+- [ ] Sidebar with collapsible navigation
+- [ ] Two pages: OCR Scanner and Expenses
+- [ ] Expenses list view with rows
+- [ ] Each row has attach receipt button
+- [ ] Camera capture works on mobile
+- [ ] Receipt thumbnail shown when attached
+- [ ] Receipt data sent to existing OCR backend
