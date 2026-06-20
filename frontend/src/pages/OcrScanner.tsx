@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { recordScan } from '../hooks/useGameState'
+import StreakBadge from '../components/StreakBadge'
+import DailyGoal from '../components/DailyGoal'
 
 // ── Design tokens (Google AI Studio dark) ───────────────────────────────────
 // bg-page:       #121317
@@ -24,6 +27,8 @@ interface OcrResult {
   review_status: 'auto-accepted' | 'manual-review' | 'rejected'
   raw_text: string | null
   template: string
+  detected_app: string | null
+  llm_confidence: number | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -257,14 +262,27 @@ export default function OcrScanner() {
 
   const handleResult = useCallback((r: OcrResult) => {
     setResult(null)
-    requestAnimationFrame(() => setResult(r))
+    requestAnimationFrame(() => {
+      setResult(r)
+      // Record scan for gamification
+      recordScan(r.detected_app ?? 'Unknown')
+    })
   }, [])
 
   return (
     <>
       <UploadZone onResult={handleResult} onError={setError} />
       <ErrorBanner message={error} onDismiss={() => setError('')} />
-      {result && <ResultCard result={result} />}
+      {result && (
+        <>
+          <ResultCard result={result} />
+          {/* Gamification bar */}
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <StreakBadge compact />
+            <DailyGoal compact />
+          </div>
+        </>
+      )}
     </>
   )
 }

@@ -49,6 +49,7 @@ Bhonepyisone · June 2026
    - ⚠ 70–94% → Manual review
    - ❌ <70% → Rejected
 5. **Expenses tracking** with receipt attachment
+6. **Gamification** — streaks, daily goals, receipt Pokédex
 
 ---
 
@@ -85,6 +86,7 @@ Receipt → EasyOCR → raw text → LLM Parser → structured JSON
 - 📋 **Expenses CRUD** — add form, list view, localStorage persistence
 - 📸 **Receipt attachment** — file upload + camera capture
 - 🧠 **LLM Parser** — multi-format receipt extraction via LiteLLM proxy
+- 🎮 **Gamification** — streaks, daily goals, receipt Pokédex
 - 📝 **15+ small commits** — each telling part of the build story
 
 ---

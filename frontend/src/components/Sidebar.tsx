@@ -32,6 +32,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    label: 'Achievements',
+    path: '/achievements',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2l2.5 5 5.5.8-4 3.9.9 5.3L10 14.5 5.1 17l.9-5.3-4-3.9L7.5 7z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ]
 
 // ── Sidebar ────────────────────────────────────────────────────────────────

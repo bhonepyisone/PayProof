@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import OcrScanner from './pages/OcrScanner'
 import Expenses from './pages/Expenses'
+import Achievements from './pages/Achievements'
 
 // ── Mobile detection hook ──────────────────────────────────────────────────
 function useIsMobile() {
@@ -70,6 +71,7 @@ function AppLayout() {
           <Routes>
             <Route path="/" element={<OcrScanner />} />
             <Route path="/expenses" element={<Expenses />} />
+            <Route path="/achievements" element={<Achievements />} />
           </Routes>
         </main>
       </div>
