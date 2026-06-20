@@ -91,6 +91,8 @@ Receipt → EasyOCR → raw text → LLM Parser → structured JSON
 - 🏷️ **Dynamic categories** — localStorage-backed add/rename/delete with fallback
 - 🧠 **LLM Parser** — multi-format receipt extraction via LiteLLM proxy
 - 🎮 **Gamification** — streaks, daily goals, receipt Pokédex
+- 📱 **UI/UX Polish** — bottom nav, undo toasts, custom dropdowns, swipe-to-delete
+- ♿ **Accessibility** — popover focus trap, Escape key, empty state CTAs
 - 📝 **15+ small commits** — each telling part of the build story
 
 ---

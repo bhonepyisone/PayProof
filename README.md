@@ -15,7 +15,12 @@ A privacy-first tool that reads payment screenshots from ANY Myanmar payment app
 - 🏷️ **Dynamic Categories** — add, rename, delete categories (defaults: Personal / Business / Other); filter pills + per-category stats
 - 🎮 **Gamification** — scan streaks, daily goals, receipt Pokédex (collect payment apps)
 - 🎨 **Dark Theme** — Google AI Studio-inspired Material 3 design
-- 📱 **Responsive** — Mobile, tablet, desktop
+- 📱 **Mobile Bottom Nav** — tab bar replaces drawer on small screens
+- ↩️ **Undo Toasts** — 5-second undo on delete/clear-all, no accidental data loss
+- 🎯 **Empty States** — guided CTAs when no data exists yet
+- 🎛️ **Custom Dropdowns** — themed select menus, no native iOS picker
+- 👆 **Swipe-to-Delete** — swipe left on mobile expense cards
+- ⌨️ **Keyboard Accessible** — popover focus trap, Escape to close
 - 🔒 **Privacy-first** — OCR on-device, LLM proxy for structured extraction
 
 ---
