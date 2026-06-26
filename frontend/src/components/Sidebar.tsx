@@ -88,7 +88,8 @@ export default function Sidebar({ expanded, onToggle, isMobile }: SidebarProps) 
               key={item.path}
               to={item.path}
               onClick={isMobile ? onToggle : undefined}
-              className={`mx-2 mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors ${
+              aria-label={item.label}
+              className={`mx-2 mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e96ff] focus:ring-offset-2 focus:ring-offset-[#1a1b1f] ${
                 isActive
                   ? 'border-l-[3px] border-[#2e96ff] bg-[#2e96ff]/[0.1] text-[#2e96ff]'
                   : 'border-l-[3px] border-transparent text-[#b2bbc5] hover:bg-[#2a2b30] hover:text-[#ffffff]'
