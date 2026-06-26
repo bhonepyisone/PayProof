@@ -51,7 +51,7 @@ export default function BottomNav() {
               key={tab.path}
               to={tab.path}
               aria-label={tab.label}
-              className={`flex flex-col items-center gap-1 px-4 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e96ff] focus:ring-offset-2 focus:ring-offset-[#1a1b1f] rounded-md ${
+              className={`flex flex-col items-center gap-1 px-4 py-2 min-h-[44px] min-w-[44px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e96ff] focus:ring-offset-2 focus:ring-offset-[#1a1b1f] rounded-md ${
                 isActive ? 'text-[#2e96ff]' : 'text-[#8e959f]'
               }`}
             >
