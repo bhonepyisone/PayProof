@@ -93,7 +93,9 @@ Receipt → EasyOCR → raw text → LLM Parser → structured JSON
 - 🎮 **Gamification** — streaks, daily goals, receipt Pokédex
 - 📱 **UI/UX Polish** — bottom nav, undo toasts, custom dropdowns, swipe-to-delete
 - ♿ **Accessibility** — popover focus trap, Escape key, empty state CTAs
-- 📝 **15+ small commits** — each telling part of the build story
+- 🎨 **Design System** — ui-ux-pro-max: Dark Mode OLED, IBM Plex Sans, fintech palette
+- 📋 **GSD Sprint** — 10-phase UI/UX improvement: a11y, touch targets, contrast, animations
+- 📝 **20+ small commits** — each telling part of the build story
 
 ---
 

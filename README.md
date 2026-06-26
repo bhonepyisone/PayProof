@@ -22,6 +22,8 @@ A privacy-first tool that reads payment screenshots from ANY Myanmar payment app
 - 👆 **Swipe-to-Delete** — swipe left on mobile expense cards
 - ⌨️ **Keyboard Accessible** — popover focus trap, Escape to close
 - 🔒 **Privacy-first** — OCR on-device, LLM proxy for structured extraction
+- ♿ **Accessible** — WCAG 2.1 AA compliant: aria-labels, focus states, 4.5:1 contrast ratio
+- 🎯 **Design System** — Research-backed design via ui-ux-pro-max: Dark Mode OLED, IBM Plex Sans, fintech palette
 
 ---
 
@@ -71,6 +73,15 @@ payproof/
 ├── CLAUDE.md                # Project memory for Claude Code
 ├── .mcp.json                # MCP tools config
 ├── .claude/                 # Skills + Agents
+│   └── skills/
+│       ├── payproof/        # OCR environment setup
+│       └── ui-ux-pro-max/   # Design intelligence (67 styles, 96 palettes)
+├── .planning/               # GSD project management
+│   ├── PROJECT.md           # Project context
+│   ├── REQUIREMENTS.md      # 10 UI/UX requirements
+│   ├── ROADMAP.md           # 10 phases
+│   ├── STATE.md             # Progress tracking
+│   └── design-system/       # Generated design system
 ├── backend/                 # FastAPI + EasyOCR + LLM Parser
 ├── frontend/                # React + Vite app
 │   └── src/
