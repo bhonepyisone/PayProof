@@ -2,8 +2,8 @@
 
 ## Current Status
 
-**Phase:** 6 (in progress)
-**Status:** Working on spacing & layout consistency
+**Phase:** 7 (in progress)
+**Status:** Working on SVG icon replacement
 
 ## Project Reference
 
@@ -21,14 +21,15 @@ See: .planning/PROJECT.md (updated 2026-06-26)
 | 3. Touch Targets | ✅ Complete | 2026-06-26 | 2026-06-26 |
 | 4. Interactions | ✅ Complete | 2026-06-26 | 2026-06-26 |
 | 5. Contrast | ✅ Complete | 2026-06-26 | 2026-06-26 |
-| 6. Layout | 🔄 In Progress | 2026-06-26 | — |
-| 7. Icons | Pending | — | — |
+| 6. Layout | ✅ Complete | 2026-06-26 | 2026-06-26 |
+| 7. Icons | 🔄 In Progress | 2026-06-26 | — |
 | 8. Animations | Pending | — | — |
 | 9. Loading | Pending | — | — |
 | 10. Responsive | Pending | — | — |
 
 ## Recent Activity
 
+- 2026-06-26: Phase 6 complete — Layout consistency (sidebar, content padding, max-width)
 - 2026-06-26: Phase 5 complete — Contrast verified (all ratios above WCAG 4.5:1)
 - 2026-06-26: Phase 4 complete — Hover/interaction states (cursor-pointer on all interactive elements)
 - 2026-06-26: Phase 3 complete — Touch target sizes (44px minimum on BottomNav)
