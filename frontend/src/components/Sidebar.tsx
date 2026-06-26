@@ -57,7 +57,7 @@ export default function Sidebar({ expanded, onToggle, isMobile }: SidebarProps) 
       <div className="flex h-14 items-center gap-3 border-b border-[#3a3b40] px-4">
         <button
           onClick={onToggle}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#b2bbc5] hover:bg-[#2a2b30] hover:text-[#ffffff] transition-colors"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#b2bbc5] hover:bg-[#2a2b30] hover:text-[#ffffff] transition-colors cursor-pointer"
           aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           {expanded ? (
@@ -89,7 +89,7 @@ export default function Sidebar({ expanded, onToggle, isMobile }: SidebarProps) 
               to={item.path}
               onClick={isMobile ? onToggle : undefined}
               aria-label={item.label}
-              className={`mx-2 mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e96ff] focus:ring-offset-2 focus:ring-offset-[#1a1b1f] ${
+              className={`mx-2 mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2e96ff] focus:ring-offset-2 focus:ring-offset-[#1a1b1f] ${
                 isActive
                   ? 'border-l-[3px] border-[#2e96ff] bg-[#2e96ff]/[0.1] text-[#2e96ff]'
                   : 'border-l-[3px] border-transparent text-[#b2bbc5] hover:bg-[#2a2b30] hover:text-[#ffffff]'
