@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+frontend/node_modules
+
+# Build artifacts
+frontend/dist
+__pycache__
+*.pyc
+
+# Environment
+.env
+.env.local
+
+# Uploads
+backend/uploads/*
+
+# IDE
+.vscode
+.idea
+
+# Docs
+*.md
+!README.md
+
+# Docker
+Dockerfile
+docker-compose.yml

@@ -3,6 +3,7 @@ PayProof OCR API — FastAPI application
 
 POST /api/v1/ocr    Upload a payment screenshot, get extracted fields.
 GET  /health        Liveness check.
+GET  /{*path}       Serve frontend (production only).
 """
 
 import asyncio
@@ -12,8 +13,10 @@ import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.llm_parser import parse_with_proxy
 from backend.ocr_engine import scan_image
@@ -33,9 +36,15 @@ logger = logging.getLogger(__name__)
 # ── App ───────────────────────────────────────────────────────────────────
 app = FastAPI(title="PayProof OCR API", version="0.1.0")
 
+# CORS: allow localhost for dev, and any Railway domain in production
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -138,3 +147,22 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             "llm_confidence": llm_confidence,
         },
     }
+
+
+# ── Static file serving (production) ──────────────────────────────────────
+# Serve the built React frontend in production
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.exists():
+    # Mount static assets (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(request: Request, full_path: str):
+        """Serve frontend files — fall back to index.html for client-side routing."""
+        # Try to serve the exact file first
+        file_path = FRONTEND_DIST / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        # Fall back to index.html for React Router
+        return FileResponse(FRONTEND_DIST / "index.html")
