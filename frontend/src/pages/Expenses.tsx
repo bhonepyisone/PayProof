@@ -149,7 +149,7 @@ function ReceiptPopover({
   onClose: () => void
   onSelectFile: (file: File) => void
   onSelectCamera: (file: File) => void
-  anchorRef: React.RefObject<HTMLDivElement>
+  anchorRef: React.RefObject<HTMLDivElement | null>
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
