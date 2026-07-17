@@ -1,0 +1,24 @@
+# Fly.io configuration for PayProof
+# https://fly.io/docs/reference/configuration/
+
+app = "payproof"
+primary_region = "sin"  # Singapore — closest to Myanmar
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8765
+  force_https = true
+  auto_stop_machines = true   # Free tier: stop when idle
+  auto_start_machines = true  # Auto-wake on request
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 25
+    soft_limit = 20
+
+[[vm]]
+  size = "shared-cpu-1x"  # 256MB RAM — enough for PaddleOCR
+  memory = "512mb"        # Request 512MB from free allowance
