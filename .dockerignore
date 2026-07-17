@@ -5,6 +5,8 @@
 # Dependencies
 node_modules
 frontend/node_modules
+.venv
+venv
 
 # Build artifacts
 frontend/dist
