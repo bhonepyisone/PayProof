@@ -709,11 +709,10 @@ export default function Expenses() {
       // Convert data URL to blob
       const res = await fetch(expense.receiptFile)
       const blob = await res.blob()
-      const form = new FormData()
-      form.append('file', blob, expense.receiptFileName ?? 'receipt.png')
+      const file = new File([blob], expense.receiptFileName ?? 'receipt.png', { type: blob.type })
 
-      const ocrRes = await fetch('/api/v1/ocr', { method: 'POST', body: form })
-      const json = await ocrRes.json()
+      const { ocrUpload } = await import('../lib/api')
+      const json = await ocrUpload(file)
 
       if (json.success) {
         setExpenses((prev) =>

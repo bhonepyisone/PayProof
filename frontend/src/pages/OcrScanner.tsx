@@ -132,10 +132,8 @@ function UploadZone({
       setLoading(true)
       onError('')
       try {
-        const form = new FormData()
-        form.append('file', file)
-        const res = await fetch('/api/v1/ocr', { method: 'POST', body: form })
-        const json = await res.json()
+        const { ocrUpload } = await import('../lib/api')
+        const json = await ocrUpload(file)
         if (json.success) {
           onResult(json.data as OcrResult)
         } else {
