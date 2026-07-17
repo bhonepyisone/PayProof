@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: payproof
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        sync: false
+        value: "https://payproof.onrender.com,http://localhost:5173"
+      # Add your LLM API key here if using the LLM parser:
+      # - key: OPENAI_API_KEY
+      #   sync: false
+      #   value: ""
+    preDeployCommand: "python -c \"from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='en')\""
