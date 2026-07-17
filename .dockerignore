@@ -5,8 +5,19 @@
 # Dependencies
 node_modules
 frontend/node_modules
+
+# Python virtual environments (anywhere)
 .venv
 venv
+**/.venv
+**/venv
+
+# Backend local cache & uploads
+backend/__pycache__
+backend/uploads
+backend/.cache
+backend/models
+backend/.DS_Store
 
 # Build artifacts
 frontend/dist
@@ -16,9 +27,6 @@ __pycache__
 # Environment
 .env
 .env.local
-
-# Uploads
-backend/uploads/*
 
 # IDE
 .vscode

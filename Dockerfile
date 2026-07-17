@@ -39,9 +39,6 @@ COPY backend/ ./backend/
 # Copy built frontend from stage 1
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Pre-download PaddleOCR models (avoids slow cold starts)
-RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='en')"
-
 # Create uploads directory
 RUN mkdir -p backend/uploads
 
