@@ -2,7 +2,7 @@
 
 ## Description
 
-Guide to set up the Python environment for PayProof's OCR backend (PaddleOCR + OpenCV). This skill prepares the local development environment so the FastAPI server can extract text from payment screenshots entirely on-device.
+Guide to set up the Python environment for PayProof's OCR backend (EasyOCR + OpenCV). This skill prepares the local development environment so the FastAPI server can extract text from payment screenshots entirely on-device.
 
 ---
 
@@ -17,55 +17,46 @@ source venv/bin/activate
 
 Isolates project dependencies from system Python. Always activate the venv before installing or running the backend.
 
-### 2. Install PaddlePaddle (CPU version)
+### 2. Install dependencies
 
 ```bash
-pip install paddlepaddle
+pip install -r backend/requirements.txt
 ```
 
-The CPU-only wheel is lighter, has no CUDA/cuDNN dependency, and is sufficient for MVP throughput (single-image OCR on demand).
-
-### 3. Install PaddleOCR
-
-```bash
-pip install paddleocr
-```
-
-Provides the `PaddleOCR` Python class. On first `PaddleOCR(lang='en')` call, it downloads the detection and recognition models automatically.
-
-### 4. Install OpenCV and other dependencies
-
-```bash
-pip install opencv-python pillow fastapi uvicorn sqlalchemy python-multipart
-```
+This installs all required packages:
 
 | Package | Purpose |
 |---|---|
-| `opencv-python` | Image pre-processing (grayscale, threshold, crop) before OCR |
+| `easyocr` | OCR text extraction from images |
+| `opencv-python` | Image pre-processing (grayscale, denoise) before OCR |
 | `pillow` | Image format handling (PNG, JPG, WebP) |
 | `fastapi` | REST API framework |
 | `uvicorn` | ASGI server to run FastAPI |
-| `sqlalchemy` | ORM for SQLite persistence |
 | `python-multipart` | Multipart form parsing for file uploads |
+| `openai` | LLM parser via LiteLLM proxy for structured extraction |
+| `pydantic` | Data validation and schemas |
+| `python-dotenv` | Load .env files |
+| `aiofiles` | Async file operations |
 
-### 5. Verify OCR works
+### 3. Verify OCR works
 
 Run this Python snippet to confirm the engine initialises and can process an image:
 
 ```python
-from paddleocr import PaddleOCR
-ocr = PaddleOCR(lang='en')
-result = ocr.ocr('test-image.png')
-print(result)
+import easyocr
+reader = easyocr.Reader(['en'], gpu=False)
+result = reader.readtext('test-image.png')
+for bbox, text, confidence in result:
+    print(f"{text} ({confidence:.2f})")
 ```
 
-If this prints detected text blocks, the environment is ready.
+If this prints detected text blocks with confidence scores, the environment is ready.
 
 ---
 
 ## Notes
 
-- **First run** downloads the PaddleOCR detection and recognition models automatically (~5 minutes, ~500 MB RAM). Subsequent runs use the cached models.
-- **CPU-only** is fine for MVP — no GPU, CUDA, or cuDNN required. A single screenshot is processed in ~1–2 seconds on a modern CPU.
-- **Model download failure** — PaddleOCR fetches models from a CDN on first use. If it fails, check your internet connection and retry. The models are cached in `~/.paddleocr/` after the first successful download.
-- **Troubleshooting** — If `paddlepaddle` installation fails, check Python version (3.8–3.12 supported) and pip version (`pip install --upgrade pip`).
+- **First run** downloads the EasyOCR detection and recognition models automatically (~2 minutes, ~200 MB RAM). Subsequent runs use the cached models.
+- **CPU-only** is fine for MVP — no GPU required. A single screenshot is processed in ~1–2 seconds on a modern CPU.
+- **Model download failure** — EasyOCR fetches models from a CDN on first use. If it fails, check your internet connection and retry. The models are cached in `~/.EasyOCR/` after the first successful download.
+- **Troubleshooting** — If installation fails, check Python version (3.8–3.12 supported) and pip version (`pip install --upgrade pip`).

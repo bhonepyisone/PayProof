@@ -68,7 +68,22 @@ if [ -n "$STAGED_PY" ]; then
 fi
 
 # ─────────────────────────────────────────────
-# c) REMINDER
+# c) TECH STACK SYNC REMINDER
+# ─────────────────────────────────────────────
+STAGED_DEPS=$(git diff --cached --name-only | grep -E '(requirements\.txt|package\.json|ocr_engine\.py|app\.py)$' || true)
+
+if [ -n "$STAGED_DEPS" ]; then
+    echo ""
+    echo -e "${YELLOW}┌───────────────────────────────────────────┐${NC}"
+    echo -e "${YELLOW}│  TIP: Dependencies changed — run:         │${NC}"
+    echo -e "${YELLOW}│  python3 scripts/sync_tech_stack.py       │${NC}"
+    echo -e "${YELLOW}│  to update the Tech Stack slide.          │${NC}"
+    echo -e "${YELLOW}└───────────────────────────────────────────┘${NC}"
+    echo ""
+fi
+
+# ─────────────────────────────────────────────
+# d) REMINDER
 # ─────────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}┌───────────────────────────────────────────┐${NC}"

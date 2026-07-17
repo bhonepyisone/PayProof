@@ -9,8 +9,8 @@
 | Layer | Technology |
 |---|---|
 | **Frontend** | React 19 + TypeScript + Vite + Tailwind CSS 4 |
-| **Backend** | Python 3.11+ · FastAPI · PaddleOCR · OpenCV |
-| **Database** | SQLite + SQLAlchemy |
+| **Backend** | Python 3.11+ · FastAPI · EasyOCR · OpenCV · OpenAI SDK |
+| **LLM Parser** | LiteLLM proxy → structured JSON extraction |
 
 ---
 
@@ -25,6 +25,7 @@ git config core.hooksPath .githooks
 This runs `.githooks/pre-commit` on every commit, which checks for:
 - Staged `.env` files (blocked — secrets must never be committed)
 - Python syntax errors in staged `.py` files (blocked — don't commit broken code)
+- Tech stack sync reminder when dependencies change
 - Reminder to update `ch-3/bhonepyisone/report.md`
 
 ---
@@ -48,9 +49,9 @@ payproof/
 │       └── payproof-dev.md
 ├── backend/                 # Python FastAPI server
 │   ├── app.py               # FastAPI entry point
-│   ├── ocr_engine.py        # PaddleOCR wrapper + confidence scoring
+│   ├── ocr_engine.py        # EasyOCR wrapper + confidence scoring
+│   ├── llm_parser.py        # LLM-based structured extraction via LiteLLM
 │   ├── templates.py         # Regex templates per payment provider
-│   ├── models.py            # SQLAlchemy models
 │   └── requirements.txt     # Python dependencies
 ├── frontend/                # React + Vite app
 │   ├── src/
@@ -65,6 +66,8 @@ payproof/
 │   └── package.json
 ├── slides.md                # Marp 6 slides × 20s auto-advance
 ├── pechakucha-6x20.md       # PechaKucha template (from team repo)
+├── scripts/
+│   └── sync_tech_stack.py   # Auto-sync tech stack slide from dependencies
 └── _TEMPLATE.md             # Report template (from team repo)
 ```
 
@@ -74,7 +77,7 @@ payproof/
 
 ### Backend
 - Python (FastAPI), async endpoints (`async def`)
-- PaddleOCR for all OCR inference — no cloud calls
+- EasyOCR for all OCR inference — no cloud calls
 - Regex extraction templates live in `templates.py`, one per provider
 - SQLite via SQLAlchemy for persistence
 - Port **8765**
@@ -108,7 +111,7 @@ payproof/
 
 ## Rules for AI
 
-1. **OCR Engine** — Use PaddleOCR as the primary OCR engine. Do NOT use, suggest, or import third-party OCR services (Google Vision, AWS Textract, Azure OCR, Tesseract Cloud, etc.). Payment data stays on-device.
+1. **OCR Engine** — Use EasyOCR as the primary OCR engine. Do NOT use, suggest, or import third-party OCR services (Google Vision, AWS Textract, Azure OCR, Tesseract Cloud, etc.). Payment data stays on-device.
 
 2. **Secrets** — Store API keys and secrets in `.env`. Never commit `.env` to git. Reference them via `os.getenv()` or python-dotenv.
 

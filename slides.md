@@ -63,16 +63,14 @@ Bhonepyisone · June 2026
 | **Frontend** | React 19 · TypeScript · Vite · Tailwind CSS 4 |
 | **Backend** | Python FastAPI · EasyOCR · OpenCV |
 | **LLM Parser** | LiteLLM proxy → structured JSON extraction |
-| **Database** | SQLite · SQLAlchemy |
 
 ### Pipeline Flow
 ```
-Receipt → EasyOCR → raw text → LLM Parser → structured JSON
+Receipt → EasyOCR → raw text → Regex + LLM Parser → structured JSON
 ```
 
 - **One API endpoint:** `POST /api/v1/ocr`
 - **Multi-format:** KBZ Pay, Wave Money, AYA Pay, bank screenshots
-- **One database file:** `payproof.db`
 
 ---
 

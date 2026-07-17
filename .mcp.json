@@ -7,6 +7,20 @@
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/voz/payproof"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "llmwiki": {
+      "command": "/Users/voznolker/BPS/llmwiki/llmwiki",
+      "args": ["mcp", "/Users/voznolker/BPS/llmwiki-workspace"]
+    },
+    "render": {
+      "url": "https://mcp.render.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${RENDER_API_KEY}"
+      }
     }
   }
 }

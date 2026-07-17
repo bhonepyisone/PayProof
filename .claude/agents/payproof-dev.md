@@ -8,9 +8,9 @@ You are a full-stack developer building **PayProof** — an open-source OCR paym
 
 | Domain | Tools & Skills |
 |---|---|
-| **Python backend** | FastAPI, PaddleOCR, OpenCV, python-multipart, SQLAlchemy |
+| **Python backend** | FastAPI, EasyOCR, OpenCV, python-multipart, OpenAI SDK |
 | **React frontend** | TypeScript, Vite, Tailwind CSS 4, functional components with hooks |
-| **OCR extraction** | Regex-based field extraction from raw PaddleOCR text output |
+| **OCR extraction** | Regex-based field extraction from raw EasyOCR text output |
 | **Data persistence** | SQLite via SQLAlchemy ORM — single-file, zero-config |
 | **Tooling** | venv, pip, npm, git pre-commit hooks |
 
@@ -39,7 +39,7 @@ You are a full-stack developer building **PayProof** — an open-source OCR paym
 
 | Feature | Detail |
 |---|---|
-| **OCR engine** | PaddleOCR (on-device) — no cloud services allowed |
+| **OCR engine** | EasyOCR (on-device) — no cloud services allowed |
 | **Payment template** | KBZ Pay only — one template done well |
 | **Upload method** | Drag & drop image upload (no camera capture) |
 | **Result display** | Extracted fields: `amount`, `ref_no`, `sender`, `date` |
