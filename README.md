@@ -1,3 +1,12 @@
+---
+title: PayProof
+emoji: 📸
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # PayProof
 
 **OCR Payment Proof Connector + Expenses Tracker**

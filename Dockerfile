@@ -42,10 +42,8 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # Create uploads directory
 RUN mkdir -p backend/uploads
 
-# Railway sets PORT automatically
-ENV PORT=8765
+# PORT is set by the platform (HF Spaces=7860, Fly.io/Railway=8765)
+EXPOSE 7860 8765
 
-EXPOSE ${PORT}
-
-# Start the app
-CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT}"]
+# Start the app (PORT defaults to 7860 for HF Spaces, overridden by Fly.io/Railway)
+CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT:-7860}"]
