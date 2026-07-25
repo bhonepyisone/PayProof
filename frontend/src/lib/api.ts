@@ -22,10 +22,28 @@ export async function confirmScan(id: number): Promise<any> {
 }
 
 /**
- * Fetch OCR scan history with confirmation status, newest first.
+ * Fetch OCR scan history with confirmation status, newest first (max 20).
  */
 export async function getScanHistory(): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/v1/ocr`)
+  const res = await fetch(`${API_BASE}/api/v1/ocr/history`)
   if (!res.ok) throw new Error(`History fetch failed: ${res.status}`)
+  return res.json()
+}
+
+/**
+ * Delete a single OCR scan by id.
+ */
+export async function deleteScan(id: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/v1/ocr/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`)
+  return res.json()
+}
+
+/**
+ * Delete all OCR scans.
+ */
+export async function clearAllScans(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/v1/ocr`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Clear all failed: ${res.status}`)
   return res.json()
 }

@@ -260,8 +260,79 @@ async def list_ocr_records():
                 "confirmed": r.confirmed,
                 "confirmed_at": r.confirmed_at.isoformat() if r.confirmed_at else None,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
+                "raw_text": r.raw_text,
             })
         return {"success": True, "data": items}
+    finally:
+        db.close()
+
+
+@app.get("/api/v1/ocr/history")
+async def list_ocr_history():
+    """
+    List recent OCR scans (newest first, max 20).
+    Used by the Recent Payments dashboard.
+    """
+    db = SessionLocal()
+    try:
+        records = (
+            db.query(OcrRecord)
+            .order_by(OcrRecord.created_at.desc())
+            .limit(20)
+            .all()
+        )
+        items = []
+        for r in records:
+            items.append({
+                "id": r.id,
+                "amount": r.amount,
+                "ref_no": r.ref_no,
+                "sender": r.sender,
+                "date": r.date,
+                "confidence": round(r.confidence, 1) if r.confidence else None,
+                "review_status": r.review_status,
+                "template": r.template,
+                "detected_app": r.detected_app,
+                "confirmed": r.confirmed,
+                "confirmed_at": r.confirmed_at.isoformat() if r.confirmed_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "raw_text": r.raw_text,
+            })
+        return {"success": True, "data": items}
+    finally:
+        db.close()
+
+
+@app.delete("/api/v1/ocr/{record_id}")
+async def delete_ocr_record(record_id: int):
+    """
+    Delete a single OCR record by id.
+    """
+    db = SessionLocal()
+    try:
+        record = db.query(OcrRecord).filter(OcrRecord.id == record_id).first()
+        if not record:
+            raise HTTPException(status_code=404, detail="OCR record not found")
+        db.delete(record)
+        db.commit()
+        logger.info("Deleted OCR record %d", record_id)
+        return {"success": True, "data": {"id": record_id, "deleted": True}}
+    finally:
+        db.close()
+
+
+@app.delete("/api/v1/ocr")
+async def clear_all_ocr_records():
+    """
+    Delete all OCR records.
+    """
+    db = SessionLocal()
+    try:
+        count = db.query(OcrRecord).count()
+        db.query(OcrRecord).delete()
+        db.commit()
+        logger.info("Cleared all OCR records (%d deleted)", count)
+        return {"success": True, "data": {"deleted_count": count}}
     finally:
         db.close()
 

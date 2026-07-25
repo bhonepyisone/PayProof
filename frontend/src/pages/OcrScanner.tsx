@@ -2,7 +2,7 @@ import { useCallback, useState, useRef, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { recordScan } from '../hooks/useGameState'
 import { cn, todayStr, readFileAsDataURL } from '../lib/utils'
-import { confirmScan, getScanHistory } from '../lib/api'
+import { confirmScan, getScanHistory, deleteScan, clearAllScans } from '../lib/api'
 import StreakBadge from '../components/StreakBadge'
 import DailyGoal from '../components/DailyGoal'
 
@@ -36,6 +36,7 @@ interface HistoryItem {
   confirmed: boolean
   confirmed_at: string | null
   created_at: string | null
+  raw_text: string | null
 }
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
@@ -377,54 +378,201 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
   )
 }
 
-// ── Confirmation History ────────────────────────────────────────────────────
-function ConfirmationHistory({ items, onRefresh }: { items: HistoryItem[]; onRefresh: () => void }) {
-  if (items.length === 0) return null
+// ── Recent Payments Dashboard ────────────────────────────────────────────────
+function RecentPayments({
+  items,
+  onRowClick,
+  onDelete,
+  onClearAll,
+  clearing,
+}: {
+  items: HistoryItem[]
+  onRowClick: (item: HistoryItem) => void
+  onDelete: (id: number) => void
+  onClearAll: () => void
+  clearing: boolean
+}) {
+  if (items.length === 0) {
+    return (
+      <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)] sm:text-[15px]">Recent Payments</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg-card)] px-4 py-10 text-center">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="mb-3 text-[var(--color-text-muted)]">
+            <rect x="5" y="8" width="30" height="24" rx="3" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="14" cy="17" r="3" fill="currentColor" />
+            <path d="M5 28l9-9 6 6 5-5 10 10" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
+          <p className="text-[13px] font-medium text-[var(--color-text-secondary)] sm:text-[14px]">
+            No scans yet
+          </p>
+          <p className="mt-1 text-[11px] text-[var(--color-text-muted)] sm:text-[12px]">
+            Drag a screenshot above to get started
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mt-8">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)] sm:text-[15px]">Confirmation History</h2>
+        <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)] sm:text-[15px]">
+          Recent Payments
+          <span className="ml-1.5 text-[11px] font-normal text-[var(--color-text-muted)]">({items.length})</span>
+        </h2>
         <button
-          onClick={onRefresh}
-          className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors sm:text-[12px]"
+          onClick={onClearAll}
+          disabled={clearing}
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-red)] transition-colors disabled:opacity-50 sm:text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--color-red)]/40 focus:ring-offset-2 focus:ring-offset-[var(--color-bg-page)] rounded min-h-[36px] px-2"
         >
-          Refresh
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M1.5 3h9M4 3V2a1 1 0 011-1h2a1 1 0 011 1v1M2.5 3l.7 7.2a1 1 0 001 .8h3.6a1 1 0 001-.8L9.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Clear All
         </button>
       </div>
+
+      {/* Table header — hidden on mobile, visible sm+ */}
+      <div className="hidden sm:flex items-center gap-2 px-4 py-2 text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">
+        <div className="w-[100px] shrink-0">Date</div>
+        <div className="w-[90px] shrink-0 text-right">Amount</div>
+        <div className="flex-1 min-w-0">Sender</div>
+        <div className="w-[80px] shrink-0 text-center">Confidence</div>
+        <div className="w-[80px] shrink-0 text-center">Status</div>
+        <div className="w-10 shrink-0" />
+      </div>
+
+      {/* Table rows */}
       <div className="divide-y divide-[var(--color-border)] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-        {items.slice(0, 20).map((item) => (
-          <div key={item.id} className="flex items-center justify-between px-4 py-3 sm:px-5">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] font-medium text-[var(--color-text-primary)] truncate sm:text-[14px]">
+        {items.map((item) => {
+          const conf = item.confidence ?? 0
+          const confColor =
+            conf >= 95 ? 'text-[var(--color-green)]' : conf >= 70 ? 'text-[var(--color-amber)]' : 'text-[var(--color-red)]'
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => onRowClick(item)}
+              className="w-full text-left px-4 py-3 sm:px-5 sm:py-3 hover:bg-[var(--color-bg-elevated)]/40 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)]/30"
+            >
+              {/* Mobile layout: stacked */}
+              <div className="sm:hidden">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[14px] font-medium text-[var(--color-text-primary)]">
+                    {item.amount ? `${Number(item.amount).toLocaleString()} Ks` : '—'}
+                  </span>
+                  {item.confirmed ? (
+                    <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--color-green)]">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Confirmed
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded border border-[var(--color-amber)]/40 bg-[var(--color-amber)]/[0.1] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-amber)]">
+                      Pending
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                  <span className="text-[11px] text-[var(--color-text-muted)]">
+                    {item.created_at ? new Date(item.created_at).toLocaleDateString() : item.date || ''}
+                  </span>
+                  {item.sender && (
+                    <span className="text-[11px] text-[var(--color-text-secondary)] truncate max-w-[120px]">{item.sender}</span>
+                  )}
+                  <span className={cn('text-[11px] font-medium tabular-nums', confColor)}>
+                    {conf.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Desktop layout: row */}
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="w-[100px] shrink-0 text-[13px] text-[var(--color-text-secondary)]">
+                  {item.created_at ? new Date(item.created_at).toLocaleDateString() : item.date || '—'}
+                </div>
+                <div className="w-[90px] shrink-0 text-right text-[14px] font-medium text-[var(--color-text-primary)] tabular-nums">
                   {item.amount ? `${Number(item.amount).toLocaleString()} Ks` : '—'}
-                </span>
-                {item.confirmed ? (
-                  <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--color-green)]">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </div>
+                <div className="flex-1 min-w-0 text-[13px] text-[var(--color-text-secondary)] truncate">
+                  {item.sender || '—'}
+                </div>
+                <div className={cn('w-[80px] shrink-0 text-center text-[13px] font-medium tabular-nums', confColor)}>
+                  {conf.toFixed(0)}%
+                </div>
+                <div className="w-[80px] shrink-0 text-center">
+                  {item.confirmed ? (
+                    <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--color-green)]">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.3" />
+                        <path d="M4 6l1.5 1.5L8 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Confirmed
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded border border-[var(--color-amber)]/40 bg-[var(--color-amber)]/[0.1] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-amber)]">
+                      Pending
+                    </span>
+                  )}
+                </div>
+                <div className="w-10 shrink-0 flex justify-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDelete(item.id)
+                    }}
+                    className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-red)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-red)]/40 rounded min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    aria-label={`Delete scan ${item.id}`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 3.5h10M5 3.5V2.5a1 1 0 011-1h2a1 1 0 011 1v1M3.5 3.5l.6 7.8a1 1 0 001 .95h3.8a1 1 0 001-.95l.6-7.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    Confirmed
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center rounded border border-[var(--color-amber)]/40 bg-[var(--color-amber)]/[0.1] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-amber)]">
-                    Pending
-                  </span>
-                )}
+                  </button>
+                </div>
               </div>
-              <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--color-text-muted)]">
-                {item.sender && <span>{item.sender}</span>}
-                {item.ref_no && <span className="font-mono">#{item.ref_no}</span>}
-                {item.confirmed_at ? (
-                  <span>{new Date(item.confirmed_at).toLocaleString()}</span>
-                ) : item.created_at ? (
-                  <span>{new Date(item.created_at).toLocaleString()}</span>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ))}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Undo Toast ──────────────────────────────────────────────────────────────
+function UndoToast({
+  message,
+  visible,
+  onUndo,
+  onDismiss,
+}: {
+  message: string
+  visible: boolean
+  onUndo: () => void
+  onDismiss: () => void
+}) {
+  if (!visible) return null
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-[slideIn_0.3s_ease-out] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3 shadow-xl backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{message}</span>
+        <button
+          onClick={onUndo}
+          className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-[12px] font-medium text-white hover:opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-elevated)] min-h-[36px]"
+        >
+          Undo
+        </button>
+        <button
+          onClick={onDismiss}
+          className="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+          aria-label="Dismiss"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
     </div>
   )
@@ -437,18 +585,24 @@ export default function OcrScanner() {
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [confirmHistory, setConfirmHistory] = useState<HistoryItem[]>([])
+  const [undoPending, setUndoPending] = useState(false)
+  const [undoVisible, setUndoVisible] = useState(false)
   const uploadedFileRef = useRef<File | null>(null)
+  const clearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Load confirmation history on mount
-  useEffect(() => {
+  // ── Load history ─────────────────────────────────────────────────
+  const refreshHistory = useCallback(() => {
     getScanHistory()
       .then((json) => {
         if (json.success) setConfirmHistory(json.data as HistoryItem[])
       })
-      .catch(() => {
-        // Silently fail — history is non-critical
-      })
+      .catch(() => {})
   }, [])
+
+  // Load history on mount
+  useEffect(() => {
+    refreshHistory()
+  }, [refreshHistory])
 
   const handleResult = useCallback((r: OcrResult) => {
     setResult(null)
@@ -468,8 +622,7 @@ export default function OcrScanner() {
           prev ? { ...prev, confirmed: true, confirmed_at: json.data.confirmed_at } : prev,
         )
         // Refresh history
-        const historyJson = await getScanHistory()
-        if (historyJson.success) setConfirmHistory(historyJson.data as HistoryItem[])
+        refreshHistory()
         setToastMessage('Payment confirmed!')
         setToastVisible(true)
         setTimeout(() => setToastVisible(false), 3000)
@@ -477,7 +630,89 @@ export default function OcrScanner() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to confirm payment')
     }
-  }, [result])
+  }, [result, refreshHistory])
+
+  // ── Click a history row → re-show in ResultCard ───────────────────
+  const handleRowClick = useCallback((item: HistoryItem) => {
+    const reconstructed: OcrResult = {
+      id: item.id,
+      amount: item.amount,
+      ref_no: item.ref_no,
+      sender: item.sender,
+      date: item.date,
+      confidence: item.confidence ?? 0,
+      review_status: (item.review_status as OcrResult['review_status']) ?? 'manual-review',
+      raw_text: item.raw_text,
+      template: item.template ?? 'kbz_pay',
+      detected_app: item.detected_app,
+      llm_confidence: null,
+      confirmed: item.confirmed,
+      confirmed_at: item.confirmed_at,
+    }
+    setError('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setResult(reconstructed)
+    // Record scan for gamification (only if not already recorded)
+    recordScan(item.detected_app ?? 'Unknown')
+  }, [])
+
+  // ── Delete a single scan ──────────────────────────────────────────
+  const handleDelete = useCallback(async (id: number) => {
+    try {
+      await deleteScan(id)
+      setToastMessage('Scan deleted')
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+      refreshHistory()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete scan')
+    }
+  }, [refreshHistory])
+
+  // ── Clear All with undo ───────────────────────────────────────────
+  const handleClearAll = useCallback(() => {
+    if (undoPending) return
+
+    // Immediately hide the items visually
+    setConfirmHistory([])
+    setUndoVisible(true)
+    setUndoPending(true)
+
+    // After 5 seconds, actually delete
+    clearTimeoutRef.current = setTimeout(async () => {
+      try {
+        await clearAllScans()
+      } catch {
+        // If clear fails, reload history to restore
+        refreshHistory()
+      }
+      setUndoPending(false)
+      setUndoVisible(false)
+      setToastMessage('All scans cleared')
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+    }, 5000)
+  }, [undoPending, refreshHistory])
+
+  const handleUndo = useCallback(() => {
+    if (clearTimeoutRef.current) {
+      clearTimeout(clearTimeoutRef.current)
+      clearTimeoutRef.current = null
+    }
+    setUndoPending(false)
+    setUndoVisible(false)
+    refreshHistory() // Restore the items
+    setToastMessage('Clear undone — scans restored')
+    setToastVisible(true)
+    setTimeout(() => setToastVisible(false), 3000)
+  }, [refreshHistory])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clearTimeoutRef.current) clearTimeout(clearTimeoutRef.current)
+    }
+  }, [])
 
   // Handle "Add to Expenses" click
   const handleAddToExpenses = useCallback(async () => {
@@ -531,20 +766,28 @@ export default function OcrScanner() {
             <StreakBadge compact />
             <DailyGoal compact />
           </div>
-          {/* Confirmation history */}
-          <ConfirmationHistory
-            items={confirmHistory}
-            onRefresh={() => {
-              getScanHistory()
-                .then((json) => {
-                  if (json.success) setConfirmHistory(json.data as HistoryItem[])
-                })
-                .catch(() => {})
-            }}
-          />
         </>
       )}
+      {/* Recent Payments — always visible */}
+      <RecentPayments
+        items={undoPending ? [] : confirmHistory}
+        onRowClick={handleRowClick}
+        onDelete={handleDelete}
+        onClearAll={handleClearAll}
+        clearing={undoPending}
+      />
       <Toast message={toastMessage} visible={toastVisible} />
+      <UndoToast
+        message="All scans cleared"
+        visible={undoVisible}
+        onUndo={handleUndo}
+        onDismiss={() => {
+          if (clearTimeoutRef.current) clearTimeout(clearTimeoutRef.current)
+          setUndoPending(false)
+          setUndoVisible(false)
+          refreshHistory()
+        }}
+      />
     </>
   )
 }
