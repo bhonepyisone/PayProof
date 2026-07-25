@@ -1,41 +1,21 @@
-# Git
-.git
-.gitignore
-
-# Dependencies
-node_modules
-frontend/node_modules
-
-# Python virtual environments (anywhere)
-.venv
-venv
-**/.venv
-**/venv
-
-# Backend local cache & uploads
-backend/__pycache__
-backend/uploads
-backend/.cache
-backend/models
-backend/.DS_Store
-
-# Build artifacts
-frontend/dist
-__pycache__
-*.pyc
-
-# Environment
 .env
 .env.local
-
-# IDE
-.vscode
-.idea
-
-# Docs
+.env.*.local
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+*.log
+.DS_Store
+.git/
+.gitignore
 *.md
 !README.md
-
-# Docker
-Dockerfile
-docker-compose.yml
+*.sql
+*.sqlite
+*.sqlite3
+uploads/
+backend/uploads/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/

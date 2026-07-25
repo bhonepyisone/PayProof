@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: payproof-api
   annotations:
-    run.googleapis.com/ingress: all-rails
+    run.googleapis.com/ingress: all
 spec:
   template:
     metadata:
@@ -11,12 +11,14 @@ spec:
         run.googleapis.com/cpu-throttling: "true"
     spec:
       containers:
-        - image: gcr.io/YOUR_PROJECT_ID/payproof-api
+        - image: gcr.io/PROJECT_ID/payproof-api
           ports:
             - containerPort: 8080
           env:
             - name: ALLOWED_ORIGINS
               value: "http://localhost:5173,https://payproof.vercel.app"
+            - name: LLM_BASE_URL
+              value: "https://proxy.vibecode.tours"
             - name: LLM_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -24,5 +26,5 @@ spec:
                   key: llm-api-key
           resources:
             limits:
-              memory: "512Mi"
+              memory: "1Gi"
               cpu: "1"
