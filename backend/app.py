@@ -1,15 +1,18 @@
 """
 PayProof OCR API — FastAPI application
 
-POST /api/v1/ocr    Upload a payment screenshot, get extracted fields.
-GET  /health        Liveness check.
-GET  /{*path}       Serve frontend (production only).
+POST /api/v1/ocr              Upload a payment screenshot, get extracted fields.
+POST /api/v1/ocr/{id}/confirm  Mark an OCR scan as manually confirmed.
+GET  /api/v1/ocr               List OCR scan history with confirmation status.
+GET  /health                   Liveness check.
+GET  /{*path}                  Serve frontend (production only).
 """
 
 import asyncio
 import logging
 import os
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -19,6 +22,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.llm_parser import parse_with_proxy
+from backend.models import OcrRecord, init_db, SessionLocal
 from backend.ocr_engine import scan_image
 
 # ── Config ────────────────────────────────────────────────────────────────
@@ -49,6 +53,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Startup ──────────────────────────────────────────────────────────────
+@app.on_event("startup")
+async def on_startup():
+    """Initialize the database on application start."""
+    init_db()
+    logger.info("Database initialized.")
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
@@ -131,10 +143,35 @@ async def ocr_endpoint(file: UploadFile = File(...)):
     else:
         review_status = "rejected"
 
-    # 7. Build response
+    # 7. Persist to database
+    db = SessionLocal()
+    try:
+        record = OcrRecord(
+            amount=fields.get("amount"),
+            ref_no=fields.get("ref_no"),
+            sender=fields.get("sender"),
+            date=fields.get("date"),
+            confidence=round(confidence, 1),
+            review_status=review_status,
+            raw_text=raw_text,
+            template=template,
+            detected_app=detected_app,
+            llm_confidence=llm_confidence,
+            confirmed=False,
+            confirmed_at=None,
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+        record_id = record.id
+    finally:
+        db.close()
+
+    # 8. Build response
     return {
         "success": True,
         "data": {
+            "id": record_id,
             "amount": fields.get("amount"),
             "ref_no": fields.get("ref_no"),
             "sender": fields.get("sender"),
@@ -145,8 +182,88 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             "template": template,
             "detected_app": detected_app,
             "llm_confidence": llm_confidence,
+            "confirmed": False,
+            "confirmed_at": None,
         },
     }
+
+
+# ── Manual Confirmation Endpoints ────────────────────────────────────────
+
+@app.post("/api/v1/ocr/{record_id}/confirm")
+async def confirm_scan(record_id: int):
+    """
+    Mark an OCR scan as manually confirmed (user verified payment in their bank app).
+
+    Returns the updated record with confirmed status and timestamp.
+    """
+    db = SessionLocal()
+    try:
+        record = db.query(OcrRecord).filter(OcrRecord.id == record_id).first()
+        if not record:
+            raise HTTPException(status_code=404, detail="OCR record not found")
+
+        if record.confirmed:
+            return {
+                "success": True,
+                "data": {
+                    "id": record.id,
+                    "confirmed": True,
+                    "confirmed_at": record.confirmed_at.isoformat() if record.confirmed_at else None,
+                    "message": "Already confirmed",
+                },
+            }
+
+        record.confirmed = True
+        record.confirmed_at = datetime.utcnow()
+        db.commit()
+
+        logger.info("OCR record %d confirmed at %s", record.id, record.confirmed_at)
+
+        return {
+            "success": True,
+            "data": {
+                "id": record.id,
+                "confirmed": True,
+                "confirmed_at": record.confirmed_at.isoformat() if record.confirmed_at else None,
+            },
+        }
+    finally:
+        db.close()
+
+
+@app.get("/api/v1/ocr")
+async def list_ocr_records():
+    """
+    List all OCR scans with their confirmation status, newest first.
+    """
+    db = SessionLocal()
+    try:
+        records = (
+            db.query(OcrRecord)
+            .order_by(OcrRecord.created_at.desc())
+            .limit(50)
+            .all()
+        )
+        items = []
+        for r in records:
+            items.append({
+                "id": r.id,
+                "amount": r.amount,
+                "ref_no": r.ref_no,
+                "sender": r.sender,
+                "date": r.date,
+                "confidence": round(r.confidence, 1) if r.confidence else None,
+                "review_status": r.review_status,
+                "template": r.template,
+                "detected_app": r.detected_app,
+                "confirmed": r.confirmed,
+                "confirmed_at": r.confirmed_at.isoformat() if r.confirmed_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            })
+        return {"success": True, "data": items}
+    finally:
+        db.close()
 
 
 # ── Static file serving (production) ──────────────────────────────────────

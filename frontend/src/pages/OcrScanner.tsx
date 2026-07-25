@@ -1,12 +1,14 @@
-import { useCallback, useState, useRef } from 'react'
+import { useCallback, useState, useRef, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { recordScan } from '../hooks/useGameState'
 import { cn, todayStr, readFileAsDataURL } from '../lib/utils'
+import { confirmScan, getScanHistory } from '../lib/api'
 import StreakBadge from '../components/StreakBadge'
 import DailyGoal from '../components/DailyGoal'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface OcrResult {
+  id: number
   amount: string | null
   ref_no: string | null
   sender: string | null
@@ -17,6 +19,23 @@ interface OcrResult {
   template: string
   detected_app: string | null
   llm_confidence: number | null
+  confirmed: boolean
+  confirmed_at: string | null
+}
+
+interface HistoryItem {
+  id: number
+  amount: string | null
+  ref_no: string | null
+  sender: string | null
+  date: string | null
+  confidence: number | null
+  review_status: string | null
+  template: string | null
+  detected_app: string | null
+  confirmed: boolean
+  confirmed_at: string | null
+  created_at: string | null
 }
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
@@ -226,13 +245,31 @@ function Toast({ message, visible }: { message: string; visible: boolean }) {
 }
 
 // ── ResultCard ─────────────────────────────────────────────────────────────
-function ResultCard({ result, onAddToExpenses }: { result: OcrResult; onAddToExpenses: () => void }) {
+function ResultCard({
+  result,
+  onConfirm,
+  onAddToExpenses,
+}: {
+  result: OcrResult
+  onConfirm: () => void
+  onAddToExpenses: () => void
+}) {
   return (
     <div className="mt-6 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
       {/* Header */}
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
         <h2 className="text-[14px] font-medium text-[var(--color-text-primary)] sm:text-[15px]">OCR Result</h2>
-        <ConfidenceBadge status={result.review_status} confidence={result.confidence} />
+        <div className="flex flex-wrap items-center gap-2">
+          {result.confirmed && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-green)]/40 bg-[var(--color-green)]/[0.12] px-2.5 py-1 text-[11px] font-medium text-[var(--color-green)] sm:text-xs">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Confirmed
+            </span>
+          )}
+          <ConfidenceBadge status={result.review_status} confidence={result.confidence} />
+        </div>
       </div>
 
       {/* Fields */}
@@ -275,16 +312,45 @@ function ResultCard({ result, onAddToExpenses }: { result: OcrResult; onAddToExp
         </details>
       )}
 
-      {/* Add to Expenses button */}
+      {/* Manual confirm button */}
       <div className="border-t border-[var(--color-border)] px-4 py-3 sm:px-5 sm:py-4">
-        <button
-          onClick={onAddToExpenses}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
-        >
-          <PlusIcon />
-          Add to Expenses
-          <ChevronIcon />
-        </button>
+        {result.confirmed ? (
+          <div className="flex items-center justify-center gap-2 rounded-lg border border-[var(--color-green)]/30 bg-[var(--color-green)]/[0.08] px-4 py-3">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-green)]" />
+              <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-green)]" />
+            </svg>
+            <span className="text-[13px] font-medium text-[var(--color-green)]">
+              Payment confirmed
+              {result.confirmed_at && (
+                <span className="ml-1.5 font-normal text-[var(--color-text-muted)]">
+                  · {new Date(result.confirmed_at).toLocaleString()}
+                </span>
+              )}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={onConfirm}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-green)] px-4 py-2.5 text-[13px] font-medium text-white hover:opacity-90 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-green)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Confirm Payment Received
+            </button>
+            <button
+              onClick={onAddToExpenses}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
+            >
+              <PlusIcon />
+              Add to Expenses
+              <ChevronIcon />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -311,13 +377,78 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
   )
 }
 
+// ── Confirmation History ────────────────────────────────────────────────────
+function ConfirmationHistory({ items, onRefresh }: { items: HistoryItem[]; onRefresh: () => void }) {
+  if (items.length === 0) return null
+
+  return (
+    <div className="mt-8">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[14px] font-semibold text-[var(--color-text-primary)] sm:text-[15px]">Confirmation History</h2>
+        <button
+          onClick={onRefresh}
+          className="text-[11px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors sm:text-[12px]"
+        >
+          Refresh
+        </button>
+      </div>
+      <div className="divide-y divide-[var(--color-border)] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
+        {items.slice(0, 20).map((item) => (
+          <div key={item.id} className="flex items-center justify-between px-4 py-3 sm:px-5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-medium text-[var(--color-text-primary)] truncate sm:text-[14px]">
+                  {item.amount ? `${Number(item.amount).toLocaleString()} Ks` : '—'}
+                </span>
+                {item.confirmed ? (
+                  <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-[var(--color-green)]">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Confirmed
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded border border-[var(--color-amber)]/40 bg-[var(--color-amber)]/[0.1] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-amber)]">
+                    Pending
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[var(--color-text-muted)]">
+                {item.sender && <span>{item.sender}</span>}
+                {item.ref_no && <span className="font-mono">#{item.ref_no}</span>}
+                {item.confirmed_at ? (
+                  <span>{new Date(item.confirmed_at).toLocaleString()}</span>
+                ) : item.created_at ? (
+                  <span>{new Date(item.created_at).toLocaleString()}</span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── OcrScanner Page ────────────────────────────────────────────────────────
 export default function OcrScanner() {
   const [result, setResult] = useState<OcrResult | null>(null)
   const [error, setError] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [confirmHistory, setConfirmHistory] = useState<HistoryItem[]>([])
   const uploadedFileRef = useRef<File | null>(null)
+
+  // Load confirmation history on mount
+  useEffect(() => {
+    getScanHistory()
+      .then((json) => {
+        if (json.success) setConfirmHistory(json.data as HistoryItem[])
+      })
+      .catch(() => {
+        // Silently fail — history is non-critical
+      })
+  }, [])
 
   const handleResult = useCallback((r: OcrResult) => {
     setResult(null)
@@ -327,6 +458,26 @@ export default function OcrScanner() {
       recordScan(r.detected_app ?? 'Unknown')
     })
   }, [])
+
+  const handleConfirm = useCallback(async () => {
+    if (!result || result.confirmed) return
+    try {
+      const json = await confirmScan(result.id)
+      if (json.success) {
+        setResult((prev) =>
+          prev ? { ...prev, confirmed: true, confirmed_at: json.data.confirmed_at } : prev,
+        )
+        // Refresh history
+        const historyJson = await getScanHistory()
+        if (historyJson.success) setConfirmHistory(historyJson.data as HistoryItem[])
+        setToastMessage('Payment confirmed!')
+        setToastVisible(true)
+        setTimeout(() => setToastVisible(false), 3000)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to confirm payment')
+    }
+  }, [result])
 
   // Handle "Add to Expenses" click
   const handleAddToExpenses = useCallback(async () => {
@@ -374,12 +525,23 @@ export default function OcrScanner() {
       <ErrorBanner message={error} onDismiss={() => setError('')} />
       {result && (
         <>
-          <ResultCard result={result} onAddToExpenses={handleAddToExpenses} />
+          <ResultCard result={result} onConfirm={handleConfirm} onAddToExpenses={handleAddToExpenses} />
           {/* Gamification bar */}
           <div className="mt-4 flex items-center justify-between gap-2">
             <StreakBadge compact />
             <DailyGoal compact />
           </div>
+          {/* Confirmation history */}
+          <ConfirmationHistory
+            items={confirmHistory}
+            onRefresh={() => {
+              getScanHistory()
+                .then((json) => {
+                  if (json.success) setConfirmHistory(json.data as HistoryItem[])
+                })
+                .catch(() => {})
+            }}
+          />
         </>
       )}
       <Toast message={toastMessage} visible={toastVisible} />
