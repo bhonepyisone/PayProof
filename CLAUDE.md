@@ -47,13 +47,16 @@ payproof/
 │   │       └── SKILL.md
 │   └── agents/
 │       └── payproof-dev.md
-├── backend/                 # Python FastAPI server
-│   ├── app.py               # FastAPI entry point
+├── backend/                 # Python FastAPI server (deployed to Cloud Run)
+│   ├── app.py               # FastAPI entry point (API only, no static serving)
+│   ├── Dockerfile           # Backend-only Dockerfile for Cloud Run
 │   ├── ocr_engine.py        # EasyOCR wrapper + confidence scoring
 │   ├── llm_parser.py        # LLM-based structured extraction via LiteLLM
 │   ├── templates.py         # Regex templates per payment provider
 │   └── requirements.txt     # Python dependencies
-├── frontend/                # React + Vite app
+├── frontend/                # React + Vite app (deployed to Vercel)
+│   ├── Dockerfile           # Dev Dockerfile for local docker-compose
+│   ├── vercel.json          # Vercel deployment config
 │   ├── src/
 │   │   ├── App.tsx
 │   │   ├── components/
@@ -61,9 +64,12 @@ payproof/
 │   │   │   ├── ResultCard.tsx
 │   │   │   └── ConfidenceBadge.tsx
 │   │   └── lib/
-│   │       └── api.ts
+│   │       └── api.ts       # Uses VITE_API_URL for backend endpoint
 │   ├── index.html
 │   └── package.json
+├── docker-compose.yml       # Local dev: backend + frontend
+├── cloudrun.yaml            # GCP Cloud Run deployment config
+├── Dockerfile               # All-in-one (deprecated — use docker-compose)
 ├── slides.md                # Marp 6 slides × 20s auto-advance
 ├── pechakucha-6x20.md       # PechaKucha template (from team repo)
 ├── scripts/
@@ -80,7 +86,8 @@ payproof/
 - EasyOCR for all OCR inference — no cloud calls
 - Regex extraction templates live in `templates.py`, one per provider
 - SQLite via SQLAlchemy for persistence
-- Port **8765**
+- Port **8765** (local) / **8080** (Cloud Run)
+- Backend is API-only — no static file serving. Frontend is deployed separately to Vercel.
 
 ### Frontend
 - React functional components with hooks; no class components
@@ -115,7 +122,7 @@ payproof/
 
 2. **Secrets** — Store API keys and secrets in `.env`. Never commit `.env` to git. Reference them via `os.getenv()` or python-dotenv.
 
-3. **Port** — Run the backend on port **8765**. Frontend dev server on its default (5173) with proxy to 8765.
+3. **Port** — Run the backend on port **8765** (local) or **8080** (Cloud Run). Frontend dev server on its default (5173) with proxy to 8765.
 
 4. **Templates** — Keep all payment-provider regex extraction templates in `backend/templates.py`. One template = one provider. No inline regex in `ocr_engine.py` or `app.py`.
 

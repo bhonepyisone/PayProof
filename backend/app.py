@@ -1,11 +1,10 @@
 """
-PayProof OCR API — FastAPI application
+PayProof OCR API — FastAPI application (backend-only)
 
 POST /api/v1/ocr              Upload a payment screenshot, get extracted fields.
 POST /api/v1/ocr/{id}/confirm  Mark an OCR scan as manually confirmed.
 GET  /api/v1/ocr               List OCR scan history with confirmation status.
 GET  /health                   Liveness check.
-GET  /{*path}                  Serve frontend (production only).
 """
 
 import asyncio
@@ -16,10 +15,8 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from backend.llm_parser import parse_with_proxy
 from backend.models import OcrRecord, init_db, SessionLocal
@@ -40,10 +37,10 @@ logger = logging.getLogger(__name__)
 # ── App ───────────────────────────────────────────────────────────────────
 app = FastAPI(title="PayProof OCR API", version="0.1.0")
 
-# CORS: allow localhost for dev, and any Railway domain in production
+# CORS: allow localhost for dev, Vercel for production
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000"
+    "http://localhost:5173,http://localhost:3000,https://payproof.vercel.app"
 ).split(",")
 
 app.add_middleware(
@@ -335,22 +332,3 @@ async def clear_all_ocr_records():
         return {"success": True, "data": {"deleted_count": count}}
     finally:
         db.close()
-
-
-# ── Static file serving (production) ──────────────────────────────────────
-# Serve the built React frontend in production
-FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-
-if FRONTEND_DIST.exists():
-    # Mount static assets (JS, CSS, images)
-    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="static-assets")
-
-    @app.get("/{full_path:path}")
-    async def serve_frontend(request: Request, full_path: str):
-        """Serve frontend files — fall back to index.html for client-side routing."""
-        # Try to serve the exact file first
-        file_path = FRONTEND_DIST / full_path
-        if file_path.is_file():
-            return FileResponse(file_path)
-        # Fall back to index.html for React Router
-        return FileResponse(FRONTEND_DIST / "index.html")

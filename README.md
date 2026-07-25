@@ -7,6 +7,8 @@ sdk: docker
 pinned: false
 ---
 
+# ⚠️ This README is for Hugging Face Spaces — see below for current deployment
+
 # PayProof
 
 **OCR Payment Proof Connector + Expenses Tracker**
@@ -60,6 +62,46 @@ cd frontend && npm install && npm run dev
 ```
 
 Open http://localhost:5173
+
+---
+
+## Deployment
+
+**Architecture:** Backend (FastAPI) and frontend (React) are deployed separately.
+
+| Layer | Platform | URL |
+|-------|----------|-----|
+| **Frontend** | Vercel | https://payproof.vercel.app |
+| **Backend** | GCP Cloud Run | https://payproof-api-xxx.a.run.app |
+
+### Deploy Backend (Cloud Run)
+
+```bash
+# From backend/ directory
+gcloud run deploy payproof-api \
+  --source . \
+  --platform managed \
+  --region asia-southeast1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --memory 512Mi \
+  --set-env-vars "ALLOWED_ORIGINS=https://payproof.vercel.app,LLM_API_KEY=xxx"
+```
+
+### Deploy Frontend (Vercel)
+
+1. Connect GitHub repo to Vercel
+2. Set root directory to `frontend/`
+3. Set env var: `VITE_API_URL=https://payproof-api-xxx.a.run.app`
+4. Deploy
+
+### Local Docker
+
+```bash
+docker compose up
+# Backend: http://localhost:8765
+# Frontend: http://localhost:5173
+```
 
 ### Supported Payment Apps
 
