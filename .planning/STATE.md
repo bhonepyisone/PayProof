@@ -29,6 +29,7 @@ See: .planning/PROJECT.md (updated 2026-06-26)
 
 ## Recent Activity
 
+- 2026-07-25: Phase 11 started — Backend/frontend decoupled for separate deployment
 - 2026-06-26: 🎉 ALL PHASES COMPLETE — UI/UX improvement sprint finished!
 - 2026-06-26: Phase 10 complete — Responsive design verified (mobile-first, all breakpoints)
 - 2026-06-26: Phase 9 complete — Loading states verified (animated dots, skeleton pulse)

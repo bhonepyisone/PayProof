@@ -126,4 +126,19 @@
 **Total: 10 phases | 10 requirements | All v1 requirements covered ✓**
 
 ---
+
+### Phase 11: Deployment Separation
+**Goal:** Separate backend/frontend and deploy to free hosting
+**Requirements:** Infrastructure
+**Success Criteria**:
+1. Backend API-only (no static file serving)
+2. Frontend deployed to Vercel (static CDN)
+3. Backend deployed to GCP Cloud Run (scales to zero)
+4. Local dev works via docker-compose
+5. CORS configured for cross-origin requests
+
+**Status:** ✅ Code decoupled, configs created (2026-07-25)
+**Remaining:** Deploy to Cloud Run + Vercel (requires GCP/Vercel accounts)
+
+---
 *Created: 2026-06-26*
