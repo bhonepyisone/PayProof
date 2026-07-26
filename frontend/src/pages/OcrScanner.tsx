@@ -182,10 +182,10 @@ function UploadZone({
     <div
       {...getRootProps()}
       className={cn(
-        'cursor-pointer rounded-lg border border-dashed p-6 text-center transition-colors duration-200 sm:p-12 lg:p-16',
+        'group cursor-pointer rounded-lg border border-dashed p-6 text-center transition-all duration-200 sm:p-12 lg:p-16',
         isDragActive
-          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/[0.06]'
-          : 'border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-text-muted)]',
+          ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/[0.06] animate-pulse-glow'
+          : 'border-[var(--color-border)] bg-[var(--color-bg-card)] hover:border-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]/80',
       )}
     >
       <input {...getInputProps()} aria-label="Upload KBZ Pay screenshot for OCR" />
@@ -193,20 +193,20 @@ function UploadZone({
       {loading ? (
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-primary)]" />
-            <div className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-primary)] [animation-delay:150ms]" />
-            <div className="h-2 w-2 animate-pulse rounded-full bg-[var(--color-primary)] [animation-delay:300ms]" />
+            <div className="loading-dot h-2 w-2 rounded-full bg-[var(--color-primary)]" />
+            <div className="loading-dot h-2 w-2 rounded-full bg-[var(--color-primary)]" />
+            <div className="loading-dot h-2 w-2 rounded-full bg-[var(--color-primary)]" />
           </div>
           <p className="text-[14px] font-medium text-[var(--color-text-secondary)] sm:text-[15px]">Processing OCR…</p>
         </div>
       ) : isDragActive ? (
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 animate-scale-in">
           <UploadIcon className="text-[var(--color-primary)]" />
           <p className="text-[14px] font-medium text-[var(--color-primary)] sm:text-[15px]">Drop your screenshot</p>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3">
-          <UploadIcon className="text-[var(--color-text-muted)]" />
+          <UploadIcon className="text-[var(--color-text-muted)] transition-transform duration-200 group-hover:scale-105" />
           <div>
             <p className="text-[14px] font-medium text-[var(--color-text-secondary)] sm:text-[15px]">
               Drag & drop a KBZ Pay screenshot
@@ -236,7 +236,7 @@ interface PendingExpense {
 function Toast({ message, visible }: { message: string; visible: boolean }) {
   if (!visible) return null
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-[slideIn_0.3s_ease-out] rounded-lg border border-[var(--color-green)]/30 bg-[var(--color-green)]/[0.15] px-4 py-3 shadow-lg backdrop-blur-sm">
+    <div className="fixed bottom-4 right-4 z-50 animate-toast rounded-lg border border-[var(--color-green)]/30 bg-[var(--color-green)]/[0.15] px-4 py-3 shadow-lg backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <CheckCircleIcon className="h-4 w-4 text-[var(--color-green)]" />
         <span className="text-[13px] font-medium text-[var(--color-green)]">{message}</span>
@@ -256,14 +256,14 @@ function ResultCard({
   onAddToExpenses: () => void
 }) {
   return (
-    <div className="mt-6 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
+    <div className="mt-6 overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] animate-fade-in-up">
       {/* Header */}
       <div className="flex flex-col gap-2 border-b border-[var(--color-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
         <h2 className="text-[14px] font-medium text-[var(--color-text-primary)] sm:text-[15px]">OCR Result</h2>
         <div className="flex flex-wrap items-center gap-2">
           {result.confirmed && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-green)]/40 bg-[var(--color-green)]/[0.12] px-2.5 py-1 text-[11px] font-medium text-[var(--color-green)] sm:text-xs">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-green)]/40 bg-[var(--color-green)]/[0.12] px-2.5 py-1 text-[11px] font-medium text-[var(--color-green)] sm:text-xs animate-scale-in">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="animate-check-pop">
                 <path d="M2.5 6l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Confirmed
@@ -291,7 +291,7 @@ function ResultCard({
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-elevated)]">
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full animate-progress-fill"
             style={{
               width: `${Math.min(result.confidence, 100)}%`,
               backgroundColor:
@@ -334,7 +334,7 @@ function ResultCard({
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
               onClick={onConfirm}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-green)] px-4 py-2.5 text-[13px] font-medium text-white hover:opacity-90 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-green)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-green)] px-4 py-2.5 text-[13px] font-medium text-white hover:opacity-90 transition-colors btn-press min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-green)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
@@ -344,7 +344,7 @@ function ResultCard({
             </button>
             <button
               onClick={onAddToExpenses}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-medium text-white hover:bg-[var(--color-primary-hover)] transition-colors btn-press min-h-[44px] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-card)]"
             >
               <PlusIcon />
               Add to Expenses
@@ -361,7 +361,7 @@ function ResultCard({
 function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
   if (!message) return null
   return (
-    <div className="mt-4 flex items-start gap-3 rounded-lg border border-[var(--color-red)]/30 bg-[var(--color-red)]/[0.08] px-3 py-3 sm:px-4">
+    <div className="mt-4 flex items-start gap-3 rounded-lg border border-[var(--color-red)]/30 bg-[var(--color-red)]/[0.08] px-3 py-3 sm:px-4 animate-fade-in-up">
       <AlertIcon className="mt-0.5 shrink-0 text-[var(--color-red)]" />
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-medium text-[var(--color-red)] sm:text-[13px]">OCR server error</p>
@@ -446,7 +446,7 @@ function RecentPayments({
 
       {/* Table rows */}
       <div className="divide-y divide-[var(--color-border)] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)]">
-        {items.map((item) => {
+        {items.map((item, idx) => {
           const conf = item.confidence ?? 0
           const confColor =
             conf >= 95 ? 'text-[var(--color-green)]' : conf >= 70 ? 'text-[var(--color-amber)]' : 'text-[var(--color-red)]'
@@ -455,7 +455,7 @@ function RecentPayments({
             <button
               key={item.id}
               onClick={() => onRowClick(item)}
-              className="w-full text-left px-4 py-3 sm:px-5 sm:py-3 hover:bg-[var(--color-bg-elevated)]/40 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)]/30"
+              className={`w-full text-left px-4 py-3 sm:px-5 sm:py-3 hover:bg-[var(--color-bg-elevated)]/40 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary)]/30 animate-row-stagger stagger-${Math.min(idx + 1, 8)}`}
             >
               {/* Mobile layout: stacked */}
               <div className="sm:hidden">
@@ -555,12 +555,12 @@ function UndoToast({
 }) {
   if (!visible) return null
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-[slideIn_0.3s_ease-out] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3 shadow-xl backdrop-blur-sm">
+    <div className="fixed bottom-4 right-4 z-50 animate-toast rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-4 py-3 shadow-xl backdrop-blur-sm">
       <div className="flex items-center gap-3">
         <span className="text-[13px] font-medium text-[var(--color-text-primary)]">{message}</span>
         <button
           onClick={onUndo}
-          className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-[12px] font-medium text-white hover:opacity-90 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-elevated)] min-h-[36px]"
+          className="rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-[12px] font-medium text-white hover:opacity-90 transition-colors btn-press focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg-elevated)] min-h-[36px]"
         >
           Undo
         </button>
@@ -762,7 +762,7 @@ export default function OcrScanner() {
         <>
           <ResultCard result={result} onConfirm={handleConfirm} onAddToExpenses={handleAddToExpenses} />
           {/* Gamification bar */}
-          <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="mt-4 flex items-center justify-between gap-2 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <StreakBadge compact />
             <DailyGoal compact />
           </div>
