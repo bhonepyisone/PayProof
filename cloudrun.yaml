@@ -16,7 +16,7 @@ spec:
             - containerPort: 8080
           env:
             - name: ALLOWED_ORIGINS
-              value: "http://localhost:5173,https://payproof.vercel.app"
+              value: "http://localhost:5173,https://pay-proof-xi.vercel.app"
             - name: LLM_BASE_URL
               value: "https://proxy.vibecode.tours"
             - name: LLM_API_KEY

@@ -56,7 +56,7 @@ Bhonepyisone · June 2026
 | Analytics | GoatCounter | Lightweight privacy-first |
 | Hosting | Vercel frontend + Cloud Run backend | Auto-deploy, scalable |
 
-- Deployed live: `https://payproof-production.up.railway.app/`
+- Deployed live: `https://pay-proof-xi.vercel.app/`
 - Repo: `github.com/bhonepyisone/PayProof`
 
 ---

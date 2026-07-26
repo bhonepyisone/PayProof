@@ -18,7 +18,7 @@ steps:
       - '--memory'
       - '1Gi'
       - '--update-env-vars'
-      - 'ALLOWED_ORIGINS=http://localhost:5173,https://payproof.vercel.app'
+      - 'ALLOWED_ORIGINS=http://localhost:5173,https://pay-proof-xi.vercel.app'
       - '--update-secrets'
       - 'LLM_API_KEY=payproof-secrets:llm-api-key'
       - '--set-env-vars'

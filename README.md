@@ -52,7 +52,7 @@ A privacy-first tool that reads payment screenshots from ANY Myanmar payment app
 
 ```bash
 # 1. Get an API key from Vibe Code Tour proxy
-#    Add to .env: LLM_API_KEY=your_key_here
+#    Add to .env: LLM_API_KEY=your_llm_proxy_key_here
 
 # 2. Backend
 cd backend && source .venv/bin/activate && uvicorn app:app --port 8765
@@ -71,8 +71,8 @@ Open http://localhost:5173
 
 | Layer | Platform | URL |
 |-------|----------|-----|
-| **Frontend** | Vercel | https://payproof.vercel.app |
-| **Backend** | GCP Cloud Run | https://payproof-api-xxx.a.run.app |
+| **Frontend** | Vercel | https://pay-proof-xi.vercel.app |
+| **Backend** | GCP Cloud Run | https://payproof-api-984858990767.asia-southeast1.run.app |
 
 ### Deploy Backend (Cloud Run)
 
@@ -84,15 +84,15 @@ gcloud run deploy payproof-api \
   --region asia-southeast1 \
   --allow-unauthenticated \
   --port 8080 \
-  --memory 512Mi \
-  --set-env-vars "ALLOWED_ORIGINS=https://payproof.vercel.app,LLM_API_KEY=xxx"
+  --memory 1Gi \
+  --set-env-vars "ALLOWED_ORIGINS=https://pay-proof-xi.vercel.app,LLM_BASE_URL=https://proxy.vibecode.tours"
 ```
 
 ### Deploy Frontend (Vercel)
 
 1. Connect GitHub repo to Vercel
 2. Set root directory to `frontend/`
-3. Set env var: `VITE_API_URL=https://payproof-api-xxx.a.run.app`
+3. Set env var: `VITE_API_URL=https://payproof-api-984858990767.asia-southeast1.run.app`
 4. Deploy
 
 ### Local Docker

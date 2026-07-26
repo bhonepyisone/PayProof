@@ -40,7 +40,7 @@ app = FastAPI(title="PayProof OCR API", version="0.1.0")
 # CORS: allow localhost for dev, Vercel for production
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000,https://payproof.vercel.app"
+    "http://localhost:5173,http://localhost:3000,https://pay-proof-xi.vercel.app"
 ).split(",")
 
 app.add_middleware(
