@@ -1,14 +1,3 @@
----
-title: PayProof
-emoji: 📸
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
----
-
-# ⚠️ This README is for Hugging Face Spaces — see below for current deployment
-
 # PayProof
 
 **OCR Payment Proof Connector + Expenses Tracker**
