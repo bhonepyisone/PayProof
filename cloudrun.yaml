@@ -11,7 +11,7 @@ spec:
         run.googleapis.com/cpu-throttling: "true"
     spec:
       containers:
-        - image: gcr.io/PROJECT_ID/payproof-api
+        - image: gcr.io/payproof-26/payproof-api
           ports:
             - containerPort: 8080
           env:

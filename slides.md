@@ -2,10 +2,7 @@
 marp: true
 paginate: true
 transition: fade
-# PechaKucha: 6 slides, 20s auto-advance. Do not change the count.
 auto-advance: 20
-backgroundColor: #fffbeb
-color: #1f2937
 ---
 
 <!-- slide 1 -->
@@ -13,7 +10,7 @@ color: #1f2937
 ## OCR Payment Proof Connector
 <!-- 20s -->
 
-**Vibe Code Tour — Ch-3 Personal Project**
+**Vibe Code Tour — Ch-6 Polish + Deployment**
 
 Bhonepyisone · June 2026
 
@@ -22,91 +19,71 @@ Bhonepyisone · June 2026
 <!-- slide 2 -->
 # The Problem 🧾
 
-- Myanmar shop owners receive **KBZ Pay screenshots** from customers daily
-
-- Must manually type **amount**, **ref_no**, **date** into their ERP
-
+- Myanmar shop owners receive **KBZ Pay screenshots** daily
+- They manually retype **amount**, **ref_no**, **date** into their records
 - **Slow** — 30–60 seconds per screenshot
-
-- **Error-prone** — fat-finger typos break payment reconciliation
-
-- **Repetitive** — same four fields, hundreds of times a month
+- **Error-prone** — fat-finger typos break reconciliation
+- **Repetitive** — same fields, hundreds of times a month
 
 ---
 
 <!-- slide 3 -->
-# What PayProof Does ⚡
+# What I Built ⚡
 
 1. **Drag & drop** a payment screenshot
-2. OCR engine extracts **four fields**:
+2. OCR extracts **four fields**:
    - 💰 Amount
    - 🔢 Reference No.
    - 👤 Sender
    - 📅 Date
-3. **Multi-format support** — KBZ Pay, Wave, AYA, bank screenshots
-4. **Confidence score** with three tiers:
-   - ✅ ≥95% → Auto-accepted
-   - ⚠ 70–94% → Manual review
-   - ❌ <70% → Rejected
-5. **OCR → Expenses pipeline** — one click sends scanned data to expense form
-6. **Dynamic categories** — add, rename, delete; defaults: Personal / Business / Other
-7. **Expenses tracking** with receipt attachment + category filter pills
-8. **Gamification** — streaks, daily goals, receipt Pokédex
+3. **3-tier confidence**:
+   - ✅ ≥95% auto-accept
+   - ⚠ 70–94% review
+   - ❌ <70% reject
+4. **Expenses pipeline** — scan → expense form with receipt
+5. **Gamification** — streaks, daily goals, receipt Pokédex
 
 ---
 
 <!-- slide 4 -->
-# Tech Stack 🔧
+# Polish + Deploy 🔧
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 19 · TypeScript · Vite · Tailwind CSS 4 |
-| **Backend** | Python FastAPI · EasyOCR · OpenCV |
-| **LLM Parser** | LiteLLM proxy → structured JSON extraction |
+| Layer | Choice | Why |
+|-------|--------|-----|
+| Frontend | React 19 + TS + Vite + Tailwind 4 | Fast DX, modern web |
+| Backend | FastAPI + EasyOCR + OpenCV | Strong API + OCR accuracy |
+| LLM | LiteLLM proxy | Structured receipt JSON |
+| Analytics | GoatCounter | Lightweight privacy-first |
+| Hosting | Vercel frontend + Cloud Run backend | Auto-deploy, scalable |
 
-### Pipeline Flow
-```
-Receipt → EasyOCR → raw text → Regex + LLM Parser → structured JSON
-```
-
-- **One API endpoint:** `POST /api/v1/ocr`
-- **Multi-format:** KBZ Pay, Wave Money, AYA Pay, bank screenshots
+- Deployed live: `https://payproof-production.up.railway.app/`
+- Repo: `github.com/bhonepyisone/PayProof`
 
 ---
 
 <!-- slide 5 -->
-# Build Process 🏗️
+# How I Worked 🛠️
 
-- 📐 **SDD** — wrote 6-part `SPEC.md` before any code
-- 🔌 **MCP** — `fetch` + `filesystem` for docs and file ops
-- 📦 **Skill** — `SKILL.md` for OCR environment setup
-- 🤖 **Agent** — `payproof-dev.md` persona with scope guardrails
-- 🪝 **Pre-commit hook** — secret detection + Python syntax check
-- 📱 **React Router** — navigation between OCR Scanner and Expenses
-- 📋 **Expenses CRUD** — add form, list view, localStorage persistence
-- 📸 **Receipt attachment** — file upload + camera capture
-- 🔗 **OCR → Expenses** — scan flows into expense form with receipt + fields pre-filled
-- 🏷️ **Dynamic categories** — localStorage-backed add/rename/delete with fallback
-- 🧠 **LLM Parser** — multi-format receipt extraction via LiteLLM proxy
-- 🎮 **Gamification** — streaks, daily goals, receipt Pokédex
-- 📱 **UI/UX Polish** — bottom nav, undo toasts, custom dropdowns, swipe-to-delete
-- ♿ **Accessibility** — popover focus trap, Escape key, empty state CTAs
-- 🎨 **Design System** — ui-ux-pro-max: Dark Mode OLED, IBM Plex Sans, fintech palette
-- 📋 **GSD Sprint** — 10-phase UI/UX improvement: a11y, touch targets, contrast, animations
-- 📝 **20+ small commits** — each telling part of the build story
+- 📐 **SDD** — wrote `SPEC.md` + `CLAUDE.md` before building
+- 🔌 **MCP + Skills** — `fetch`, `filesystem`, OCR setup skill
+- 🤖 **Agent** — scoped dev persona, guardrails, pre-commit checks
+- 🪝 **Pre-commit** — secret scan + syntax check
+- 📦 **GSD Core loop** — small commits, ship often
+- ♿ **a11y pass** — undo toasts, empty states, focus management
+- 🎨 **Design system** — dark OLED theme, IBM Plex Sans
 
 ---
 
 <!-- slide 6 -->
-# Next Steps & Links 🚀
+# Done 🎯
 
-### What's next
-- 🔔 Webhook integration for ERP auto-link
-- 📊 Batch processing for high-volume shops
-- 📱 Mobile app with camera capture
-- 🔐 User auth + multi-tenant support
+- [x] Repo public: `github.com/bhonepyisone/PayProof`
+- [x] Live URL working
+- [x] Analytics: GoatCounter
+- [x] report.md in team repo
+- [x] MCP + skill + agent used
+- [x] 20+ build commits
 
-### Links
-- 🔗 **GitHub:** `github.com/bhonepyisone/PayProof`
-- 📄 **Report:** `ch-3/bhonepyisone/report.md`
-- 📋 **DoD:** See `SPEC.md` for the full checklist
+---
+
+**Team 18 · PayProof · Vibe Code Tour Cohort 1**
