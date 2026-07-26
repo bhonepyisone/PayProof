@@ -25,7 +25,7 @@ PayProof gives Ma Aye Aye a single-page web app. She drags a screenshot onto the
 |---|---|
 | **Reduce manual errors** | OCR eliminates fat-finger typos on amount and ref_no — the fields that break reconciliation |
 | **Save time** | Drag-and-drop → instant extraction vs. 30-60 seconds of manual typing per screenshot |
-| **Privacy-first** | PaddleOCR runs entirely on-device; payment screenshots never leave the machine |
+| **Privacy-first** | EasyOCR runs entirely on-device; payment screenshots never leave the machine |
 | **Offline capable** | No internet required — works in shops with spotty connectivity, common across Myanmar |
 | **Open-source** | Community can contribute templates for Wave Pay, AYA Pay, CB Pay, and beyond |
 | **Myanmar-focused** | Built for local payment apps and local workflows first; not a generic tool adapted after the fact |
@@ -51,7 +51,7 @@ These are explicitly deferred or excluded from the MVP. Each may be revisited po
 
 | Constraint | Rationale |
 |---|---|
-| **No third-party OCR services** | Google Vision, AWS Textract, Azure OCR, Tesseract Cloud — all prohibited. PaddleOCR (on-device) only. Payment data stays local. |
+| **No third-party OCR services** | Google Vision, AWS Textract, Azure OCR, Tesseract Cloud — all prohibited. EasyOCR (on-device) only. Payment data stays local. |
 | **No cloud dependency** | The app must function fully offline. No license servers, no telemetry, no phoning home. |
 
 ---
@@ -63,9 +63,9 @@ These are explicitly deferred or excluded from the MVP. Each may be revisited po
 | Layer | Technology |
 |---|---|
 | **Frontend** | React 19 + TypeScript + Vite + Tailwind CSS 4 |
-| **Backend** | Python 3.11+ · FastAPI · PaddleOCR · OpenCV |
+| **Backend** | Python 3.11+ · FastAPI · EasyOCR · OpenCV |
 | **Database** | SQLite + SQLAlchemy (single-file, zero-config) |
-| **OCR Engine** | PaddleOCR (on-device; no network call for inference) |
+| **OCR Engine** | EasyOCR (on-device; no network call for inference) |
 
 ### 5.2 API
 
@@ -118,7 +118,7 @@ payproof/
 │   │   └── lib/
 │   │       └── api.ts
 │   └── ...
-├── backend/           # FastAPI + PaddleOCR
+├── backend/           # FastAPI + EasyOCR
 │   ├── main.py
 │   ├── ocr/
 │   │   ├── engine.py
@@ -156,7 +156,7 @@ The MVP ships when every checkbox is ticked.
 
 ### Backend
 - [ ] FastAPI server starts and serves `POST /api/v1/ocr`
-- [ ] OCR engine (PaddleOCR) extracts `amount`, `ref_no`, `sender`, `date` from KBZ Pay screenshots
+- [ ] OCR engine (EasyOCR) extracts `amount`, `ref_no`, `sender`, `date` from KBZ Pay screenshots
 - [ ] Confidence scoring with the three-tier classification (auto-accept / manual-review / reject)
 - [ ] Results persisted to SQLite via SQLAlchemy
 

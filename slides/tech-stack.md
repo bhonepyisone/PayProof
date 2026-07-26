@@ -125,4 +125,4 @@ Discuss → Plan → Execute → Verify → Ship
 
 - 🔗 **GitHub:** `github.com/bhonepyisone/PayProof`
 - 📋 **Spec:** `SPEC.md`
-- 📊 **Report:** `ch-5/bhonepyisone/report.md`
+- 📊 **Report:** `ch-3/bhonepyisone/report.md`

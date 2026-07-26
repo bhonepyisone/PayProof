@@ -20,7 +20,7 @@ For systematic UI/UX improvements, used the **ui-ux-pro-max** skill to generate 
 
 ### Skill
 - path: .claude/skills/payproof/SKILL.md
-- what: OCR environment setup instructions — ensures PaddleOCR/EasyOCR dependencies are correctly installed and configured
+- what: OCR environment setup instructions — ensures EasyOCR dependencies are correctly installed and configured
 
 ### Agent
 - path: .claude/agents/payproof-dev.md

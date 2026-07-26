@@ -137,8 +137,9 @@
 4. Local dev works via docker-compose
 5. CORS configured for cross-origin requests
 
-**Status:** ✅ Code decoupled, configs created (2026-07-25)
-**Remaining:** Deploy to Cloud Run + Vercel (requires GCP/Vercel accounts)
+**Status:** ✅ Complete — deployed 2026-07-26
+**Frontend:** https://pay-proof-xi.vercel.app
+**Backend:** https://payproof-api-984858990767.asia-southeast1.run.app
 
 ---
 *Created: 2026-06-26*
